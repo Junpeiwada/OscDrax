@@ -36,18 +36,6 @@ struct WaveformDisplayView: View {
                         lineWidth: 2
                     )
                     .padding(20)
-
-                if isDrawing {
-                    Path { path in
-                        if currentDrawingPoints.count > 1 {
-                            path.move(to: currentDrawingPoints[0])
-                            for point in currentDrawingPoints.dropFirst() {
-                                path.addLine(to: point)
-                            }
-                        }
-                    }
-                    .stroke(Color.white.opacity(0.5), lineWidth: 2)
-                }
             }
             .contentShape(Rectangle())
             .gesture(
