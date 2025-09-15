@@ -17,6 +17,17 @@ enum WaveformType: String, CaseIterable, Codable {
     }
 }
 
+enum ChordType: String, CaseIterable, Codable {
+    case major = "Major"
+    case minor = "Minor"
+    case seventh = "7th"
+    case minorSeventh = "m7"
+    case majorSeventh = "Maj7"
+    case sus4 = "Sus4"
+    case diminished = "Dim"
+    case power = "Power"
+}
+
 class Track: ObservableObject, Identifiable, Codable {
     let id: Int
     @Published var waveformType: WaveformType = .sine
@@ -25,6 +36,10 @@ class Track: ObservableObject, Identifiable, Codable {
     @Published var volume: Float = 0.5
     @Published var isPlaying: Bool = false
     @Published var portamentoTime: Float = 0.0  // 0-1000ms range
+    @Published var harmonyEnabled: Bool = true
+    @Published var assignedInterval: String?  // Automatically assigned interval
+    @Published var octaveOffset: Int = 0  // -2, -1, 0, +1, +2
+    @Published var isHarmonyMaster: Bool = false
 
     init(id: Int) {
         self.id = id
@@ -33,6 +48,7 @@ class Track: ObservableObject, Identifiable, Codable {
 
     enum CodingKeys: String, CodingKey {
         case id, waveformType, waveformData, frequency, volume, isPlaying, portamentoTime
+        case harmonyEnabled, assignedInterval, octaveOffset, isHarmonyMaster
     }
 
     required init(from decoder: Decoder) throws {
@@ -44,6 +60,10 @@ class Track: ObservableObject, Identifiable, Codable {
         volume = try container.decode(Float.self, forKey: .volume)
         isPlaying = try container.decode(Bool.self, forKey: .isPlaying)
         portamentoTime = try container.decode(Float.self, forKey: .portamentoTime)
+        harmonyEnabled = try container.decodeIfPresent(Bool.self, forKey: .harmonyEnabled) ?? false
+        assignedInterval = try container.decodeIfPresent(String.self, forKey: .assignedInterval)
+        octaveOffset = try container.decodeIfPresent(Int.self, forKey: .octaveOffset) ?? 0
+        isHarmonyMaster = try container.decodeIfPresent(Bool.self, forKey: .isHarmonyMaster) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -55,6 +75,10 @@ class Track: ObservableObject, Identifiable, Codable {
         try container.encode(volume, forKey: .volume)
         try container.encode(isPlaying, forKey: .isPlaying)
         try container.encode(portamentoTime, forKey: .portamentoTime)
+        try container.encode(harmonyEnabled, forKey: .harmonyEnabled)
+        try container.encode(assignedInterval, forKey: .assignedInterval)
+        try container.encode(octaveOffset, forKey: .octaveOffset)
+        try container.encode(isHarmonyMaster, forKey: .isHarmonyMaster)
     }
 
     func generateDefaultWaveform() {

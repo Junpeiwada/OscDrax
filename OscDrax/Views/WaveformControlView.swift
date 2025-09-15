@@ -5,7 +5,7 @@ struct WaveformControlView: View {
     @State private var showPresetPicker = false
 
     var body: some View {
-        HStack(spacing: 15) {
+        HStack(spacing: 8) {
             Button(action: {
                 showPresetPicker = true
             }, label: {

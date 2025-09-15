@@ -126,7 +126,7 @@ class OscillatorNode {
         self.targetFrequency = track.frequency
         self.volume = track.volume
         self.waveformTable = track.waveformData
-        self.portamentoTime = track.portamentoTime / 1000.0  // Convert ms to seconds
+        self.portamentoTime = track.portamentoTime / 1_000.0  // Convert ms to seconds
 
         // Initialize phase increment before creating source node
         self.phaseIncrement = frequency / Float(sampleRate)
@@ -197,7 +197,7 @@ class OscillatorNode {
     }
 
     func updatePortamentoTime(_ time: Float) {
-        portamentoTime = time / 1000.0  // Convert ms to seconds
+        portamentoTime = time / 1_000.0  // Convert ms to seconds
     }
 
     func start() {

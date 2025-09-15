@@ -95,19 +95,21 @@ struct WaveformDisplayView: View {
             Array(repeating: Float(0), count: 512) : track.waveformData
 
         // Only update the touched range
-        for index in startIndex...endIndex {
-            let xPos = CGFloat(index) / 511.0 * effectiveWidth + padding
+        if startIndex <= endIndex {
+            for index in startIndex...endIndex {
+                let xPos = CGFloat(index) / 511.0 * effectiveWidth + padding
 
-            // Find the closest drawn point for this index
-            let closestPoint = currentDrawingPoints.min(by: { abs($0.x - xPos) < abs($1.x - xPos) })
+                // Find the closest drawn point for this index
+                let closestPoint = currentDrawingPoints.min(by: { abs($0.x - xPos) < abs($1.x - xPos) })
 
-            if let point = closestPoint {
-                // Only update if the point is within reasonable horizontal distance
-                let horizontalDistance = abs(point.x - xPos)
-                if horizontalDistance < effectiveWidth / 50 { // Threshold for proximity
-                    let normalizedY = Float((point.y - padding) / effectiveHeight)
-                    let waveValue = 1.0 - normalizedY * 2.0
-                    updatedWaveform[index] = max(-1.0, min(1.0, waveValue))
+                if let point = closestPoint {
+                    // Only update if the point is within reasonable horizontal distance
+                    let horizontalDistance = abs(point.x - xPos)
+                    if horizontalDistance < effectiveWidth / 50 { // Threshold for proximity
+                        let normalizedY = Float((point.y - padding) / effectiveHeight)
+                        let waveValue = 1.0 - normalizedY * 2.0
+                        updatedWaveform[index] = max(-1.0, min(1.0, waveValue))
+                    }
                 }
             }
         }

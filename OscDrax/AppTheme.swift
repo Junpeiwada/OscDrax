@@ -2,9 +2,7 @@ import SwiftUI
 
 /// アプリ全体のテーマカラーを管理する構造体
 struct AppTheme {
-
     struct Colors {
-
         // MARK: - 背景
         /// ContentViewの背景グラデーション
         static let backgroundGradient = [

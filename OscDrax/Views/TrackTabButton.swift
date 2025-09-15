@@ -9,18 +9,24 @@ struct TrackTabButton: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 2) {
-                // Playing status (green dot with glow when playing)
-                ZStack {
+                // Playing status with track number
+                HStack(spacing: 4) {
+                    // Playing indicator
                     if track.isPlaying {
                         Circle()
                             .fill(AppTheme.Colors.TrackTab.playingIndicator)
-                            .frame(width: 12, height: 12)
-                            .shadow(color: AppTheme.Colors.TrackTab.playingIndicator, radius: 8)
-                            .shadow(color: AppTheme.Colors.TrackTab.playingIndicator.opacity(0.5), radius: 12)
+                            .frame(width: 10, height: 10)
+                            .shadow(color: AppTheme.Colors.TrackTab.playingIndicator, radius: 6)
                     } else {
-                        Text(" ")
-                            .font(.system(size: 12))
+                        Circle()
+                            .fill(Color.clear)
+                            .frame(width: 10, height: 10)
                     }
+
+                    // Small track number
+                    Text("T\(trackNumber)")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(isSelected ? .white.opacity(0.8) : .gray.opacity(0.6))
                 }
                 .frame(height: 14)
 
@@ -37,9 +43,17 @@ struct TrackTabButton: View {
                     .font(.system(size: 8, design: .monospaced))
                     .lineLimit(1)
 
-                // Track number
-                Text("\(trackNumber)")
-                    .font(.system(size: 16, weight: .bold))
+                // Position (Interval) display - Large
+                Text(track.harmonyEnabled ? (track.assignedInterval ?? "--") : "Free")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(track.harmonyEnabled ?
+                        Color(red: 0.9, green: 0.5, blue: 0.1) :
+                        (isSelected ? .white : .gray))
+
+                // Frequency display
+                Text("\(Int(track.frequency)) Hz")
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .foregroundColor(isSelected ? .white.opacity(0.7) : .gray.opacity(0.6))
             }
             .foregroundColor(isSelected ? .white : .gray)
             .frame(maxWidth: .infinity)

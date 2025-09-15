@@ -14,6 +14,8 @@ struct ContentView: View {
     @StateObject private var track3 = Track(id: 3)
     @StateObject private var track4 = Track(id: 4)
     @StateObject private var audioManager = AudioManager.shared
+    @State private var isUpdatingHarmony = false
+    @State private var globalChordType: ChordType = .major
 
     var currentTrack: Track {
         switch selectedTrack {
@@ -36,11 +38,12 @@ struct ContentView: View {
 
             VStack(spacing: 20) {
                 WaveformControlView(track: currentTrack)
+                    .padding(.bottom, -10)
 
                 WaveformDisplayView(track: currentTrack)
                     .frame(height: 200)
 
-                ControlPanelView(track: currentTrack)
+                ControlPanelView(track: currentTrack, globalChordType: $globalChordType, onChordTypeChanged: updateHarmonyForChordChange)
 
                 Spacer()
 
@@ -59,6 +62,9 @@ struct ContentView: View {
             audioManager.setupTrack(track2)
             audioManager.setupTrack(track3)
             audioManager.setupTrack(track4)
+
+            // Setup frequency change observers for harmony
+            setupHarmonyObservers()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             // Save tracks when app goes to background
@@ -92,7 +98,82 @@ struct ContentView: View {
         target.frequency = source.frequency
         target.volume = source.volume
         target.portamentoTime = source.portamentoTime
+        target.harmonyEnabled = source.harmonyEnabled
+        target.assignedInterval = source.assignedInterval
+        target.octaveOffset = source.octaveOffset
         // Don't restore isPlaying state to avoid audio playing on launch
+    }
+
+    private func updateHarmonyForChordChange() {
+        let allTracks = [track1, track2, track3, track4]
+
+        guard !isUpdatingHarmony else { return }
+
+        // Find current master track
+        if let masterTrack = allTracks.first(where: { $0.isHarmonyMaster }) {
+            isUpdatingHarmony = true
+
+            // Re-calculate all harmonies with new chord type
+            audioManager.updateHarmonyFrequencies(
+                masterTrack: masterTrack,
+                allTracks: allTracks,
+                chordType: globalChordType
+            )
+
+            isUpdatingHarmony = false
+        }
+    }
+
+    private func setupHarmonyObservers() {
+        let allTracks = [track1, track2, track3, track4]
+
+        // Observe frequency changes on all tracks
+        for track in allTracks {
+            track.$frequency
+                .dropFirst() // Skip initial value
+                .sink { _ in
+                    guard !self.isUpdatingHarmony else { return }
+
+                    // Set this track as the master and update others
+                    self.isUpdatingHarmony = true
+
+                    // Reset all master flags and set this track as master
+                    allTracks.forEach { $0.isHarmonyMaster = false }
+                    track.isHarmonyMaster = true
+
+                    // Update harmony frequencies for other tracks
+                    self.audioManager.updateHarmonyFrequencies(
+                        masterTrack: track,
+                        allTracks: allTracks,
+                        chordType: self.globalChordType
+                    )
+
+                    self.isUpdatingHarmony = false
+                }
+                .store(in: &audioManager.cancellables)
+
+            // Also observe harmony enabled state changes
+            track.$harmonyEnabled
+                .dropFirst()
+                .sink { _ in
+                    guard !self.isUpdatingHarmony else { return }
+
+                    // Find current master track
+                    if let masterTrack = allTracks.first(where: { $0.isHarmonyMaster }) {
+                        self.isUpdatingHarmony = true
+
+                        // Re-assign intervals based on current master
+                        self.audioManager.updateHarmonyFrequencies(
+                            masterTrack: masterTrack,
+                            allTracks: allTracks,
+                            chordType: self.globalChordType
+                        )
+
+                        self.isUpdatingHarmony = false
+                    }
+                }
+                .store(in: &audioManager.cancellables)
+        }
     }
 }
 
