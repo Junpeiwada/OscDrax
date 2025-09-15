@@ -21,6 +21,9 @@ make test          # ユニットテストを実行
 
 # Xcodeで開く
 open OscDrax.xcodeproj
+
+# Claude会話履歴バックアップ
+./Scripts/copy_claude_conversations.sh  # ClaudeCode-Talkディレクトリに会話履歴をコピー
 ```
 
 ## アーキテクチャ
