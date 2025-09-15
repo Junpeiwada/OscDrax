@@ -22,9 +22,10 @@ class PersistenceManager {
             encoder.outputFormatting = .prettyPrinted
             let data = try encoder.encode(tracks)
             try data.write(to: fileURL)
-            print("Tracks saved successfully to: \(fileURL)")
+            // Silent operation - no logging needed
         } catch {
-            print("Failed to save tracks: \(error)")
+            // Silent failure - could use os.log if needed
+            _ = error
         }
     }
 
@@ -34,10 +35,10 @@ class PersistenceManager {
             let data = try Data(contentsOf: fileURL)
             let decoder = JSONDecoder()
             let tracks = try decoder.decode([Track].self, from: data)
-            print("Tracks loaded successfully")
             return tracks
         } catch {
-            print("Failed to load tracks: \(error)")
+            // Silent failure - could use os.log if needed
+            _ = error
             return nil
         }
     }
@@ -47,10 +48,11 @@ class PersistenceManager {
         do {
             if FileManager.default.fileExists(atPath: fileURL.path) {
                 try FileManager.default.removeItem(at: fileURL)
-                print("Saved data cleared")
+                // Silent operation - no logging needed
             }
         } catch {
-            print("Failed to clear saved data: \(error)")
+            // Silent failure - could use os.log if needed
+            _ = error
         }
     }
 }

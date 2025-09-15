@@ -8,7 +8,7 @@ struct WaveformControlView: View {
         HStack(spacing: 15) {
             Button(action: {
                 showPresetPicker = true
-            }) {
+            }, label: {
                 HStack {
                     Image(systemName: "waveform")
                         .font(.system(size: 16))
@@ -16,7 +16,7 @@ struct WaveformControlView: View {
                         .font(.system(size: 14, weight: .medium))
                 }
                 .foregroundColor(.white)
-            }
+            })
             .buttonStyle(LiquidglassButtonStyle())
             .sheet(isPresented: $showPresetPicker) {
                 PresetPickerView(track: track, isPresented: $showPresetPicker)
@@ -31,7 +31,7 @@ struct WaveformControlView: View {
             Button(action: {
                 track.setWaveformType(.custom)
                 track.clearCustomWaveform()
-            }) {
+            }, label: {
                 HStack {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16))
@@ -39,7 +39,7 @@ struct WaveformControlView: View {
                         .font(.system(size: 14, weight: .medium))
                 }
                 .foregroundColor(.white)
-            }
+            })
             .buttonStyle(LiquidglassButtonStyle())
         }
     }

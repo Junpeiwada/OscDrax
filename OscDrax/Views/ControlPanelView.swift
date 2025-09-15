@@ -7,6 +7,7 @@ struct ControlPanelView: View {
         VStack(spacing: 25) {
             FrequencyControlView(frequency: $track.frequency)
             VolumeControlView(volume: $track.volume)
+            PortamentoControlView(portamentoTime: $track.portamentoTime)
             PlayButtonView(isPlaying: $track.isPlaying)
         }
     }
@@ -18,16 +19,11 @@ struct FrequencyControlView: View {
     private let maxFreq: Float = 20_000
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Hz")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
-                Spacer()
-                Text("\(Int(frequency)) Hz")
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(.white.opacity(0.6))
-            }
+        HStack(spacing: 12) {
+            Text("Hz")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+                .frame(width: 80, alignment: .leading)
 
             Slider(
                 value: Binding(
@@ -37,7 +33,13 @@ struct FrequencyControlView: View {
                 in: 0...1
             )
             .liquidglassSliderStyle()
+
+            Text("\(Int(frequency))")
+                .font(.system(size: 12, weight: .regular, design: .monospaced))
+                .foregroundColor(.white.opacity(0.6))
+                .frame(width: 50, alignment: .trailing)
         }
+        .frame(height: 30)
     }
 
     private func logScale(_ value: Float) -> Float {
@@ -59,20 +61,43 @@ struct VolumeControlView: View {
     @Binding var volume: Float
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Volume")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
-                Spacer()
-                Text("\(Int(volume * 100))%")
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(.white.opacity(0.6))
-            }
+        HStack(spacing: 12) {
+            Text("Volume")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+                .frame(width: 80, alignment: .leading)
 
             Slider(value: $volume, in: 0...1)
                 .liquidglassSliderStyle()
+
+            Text("\(Int(volume * 100))%")
+                .font(.system(size: 12, weight: .regular, design: .monospaced))
+                .foregroundColor(.white.opacity(0.6))
+                .frame(width: 50, alignment: .trailing)
         }
+        .frame(height: 30)
+    }
+}
+
+struct PortamentoControlView: View {
+    @Binding var portamentoTime: Float
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text("Portamento")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+                .frame(width: 80, alignment: .leading)
+
+            Slider(value: $portamentoTime, in: 0...1_000)
+                .liquidglassSliderStyle()
+
+            Text("\(Int(portamentoTime))ms")
+                .font(.system(size: 12, weight: .regular, design: .monospaced))
+                .foregroundColor(.white.opacity(0.6))
+                .frame(width: 50, alignment: .trailing)
+        }
+        .frame(height: 30)
     }
 }
 
@@ -82,7 +107,7 @@ struct PlayButtonView: View {
     var body: some View {
         Button(action: {
             isPlaying.toggle()
-        }) {
+        }, label: {
             HStack {
                 Image(systemName: isPlaying ? "stop.fill" : "play.fill")
                     .font(.system(size: 20))
@@ -92,7 +117,7 @@ struct PlayButtonView: View {
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 5)
-        }
-        .buttonStyle(LiquidglassButtonStyle())
+        })
+        .buttonStyle(PlayStopButtonStyle(isStop: isPlaying))
     }
 }

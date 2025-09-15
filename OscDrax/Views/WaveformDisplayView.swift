@@ -4,8 +4,8 @@ struct WaveformDisplayView: View {
     @ObservedObject var track: Track
     @State private var currentDrawingPoints: [CGPoint] = []
     @State private var isDrawing = false
-    @State private var touchStartX: CGFloat? = nil
-    @State private var touchEndX: CGFloat? = nil
+    @State private var touchStartX: CGFloat?
+    @State private var touchEndX: CGFloat?
 
     var body: some View {
         GeometryReader { geometry in

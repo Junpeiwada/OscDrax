@@ -124,11 +124,90 @@ struct LiquidglassButtonStyle: ButtonStyle {
     }
 }
 
+struct PlayStopButtonStyle: ButtonStyle {
+    let isStop: Bool
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(
+                ZStack {
+                    // Base layer - different colors for Play vs Stop
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: isStop ? [
+                                    // Dark red for Stop
+                                    Color(red: 0.4, green: 0.1, blue: 0.1,
+                                          opacity: configuration.isPressed ? 0.5 : 0.7),
+                                    Color(red: 0.3, green: 0.05, blue: 0.05, 
+                                          opacity: configuration.isPressed ? 0.4 : 0.6)
+                                ] : [
+                                    // Current blue/purple for Play
+                                    Color(red: 0.2, green: 0.3, blue: 0.5,
+                                          opacity: configuration.isPressed ? 0.5 : 0.7),
+                                    Color(red: 0.1, green: 0.2, blue: 0.4, 
+                                          opacity: configuration.isPressed ? 0.4 : 0.6)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+
+                    // Glass effect
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: Color.white.opacity(isStop ? 0.2 : 0.3), location: 0),
+                                    .init(color: Color.white.opacity(isStop ? 0.05 : 0.1), location: 0.5),
+                                    .init(color: Color.clear, location: 1)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 15)
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: isStop ? [
+                                Color.red.opacity(0.5),
+                                Color.red.opacity(0.2)
+                            ] : [
+                                Color.white.opacity(0.7),
+                                Color.white.opacity(0.3)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.5
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.4),
+                    radius: configuration.isPressed ? 3 : 8,
+                    x: configuration.isPressed ? 2 : 5,
+                    y: configuration.isPressed ? 2 : 5)
+            .shadow(color: isStop ? 
+                    Color(red: 0.3, green: 0.1, blue: 0.1, opacity: 0.3) :
+                    Color(white: 0.4, opacity: 0.3),
+                    radius: configuration.isPressed ? 3 : 8,
+                    x: configuration.isPressed ? -2 : -5,
+                    y: configuration.isPressed ? -2 : -5)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
 struct LiquidglassSliderStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .tint(Color(red: 0.3, green: 0.6, blue: 0.9))
-            .padding(12)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
             .background(
                 ZStack {
                     // Inner shadow effect

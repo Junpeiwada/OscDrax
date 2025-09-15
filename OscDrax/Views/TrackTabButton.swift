@@ -14,6 +14,14 @@ struct TrackTabButton: View {
                     .font(.system(size: 12))
                     .frame(height: 14)
 
+                // Mini waveform display with animation
+                MiniWaveformView(
+                    waveformData: track.waveformData,
+                    isPlaying: track.isPlaying
+                )
+                .frame(height: 20)
+                .padding(.horizontal, 4)
+
                 // Frequency display
                 Text("\(Int(track.frequency))Hz")
                     .font(.system(size: 10, weight: .medium))

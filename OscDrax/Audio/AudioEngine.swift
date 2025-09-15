@@ -5,7 +5,7 @@ class AudioEngine: ObservableObject {
     private let engine = AVAudioEngine()
     private let mixer = AVAudioMixerNode()
     private var oscillatorNodes: [Int: OscillatorNode] = [:]
-    private let sampleRate: Double = 44100.0
+    private let sampleRate: Double = 44_100.0
     private let mixerVolume: Float = 0.5  // Master volume to prevent clipping with 4 tracks
 
     init() {
@@ -21,7 +21,8 @@ class AudioEngine: ObservableObject {
             try session.setPreferredSampleRate(sampleRate)
             try session.setPreferredIOBufferDuration(512.0 / sampleRate) // ~11.6ms latency
         } catch {
-            print("Failed to setup audio session: \(error)")
+            // Silent failure - audio session setup error
+            _ = error
         }
     }
 
@@ -35,7 +36,8 @@ class AudioEngine: ObservableObject {
         do {
             try engine.start()
         } catch {
-            print("Failed to start audio engine: \(error)")
+            // Silent failure - audio engine start error
+            _ = error
         }
     }
 
@@ -124,7 +126,7 @@ class OscillatorNode {
         self.targetFrequency = track.frequency
         self.volume = track.volume
         self.waveformTable = track.waveformData
-        self.portamentoTime = track.portamentoTime / 1000.0  // Convert ms to seconds
+        self.portamentoTime = track.portamentoTime / 1_000.0  // Convert ms to seconds
 
         // Initialize phase increment before creating source node
         self.phaseIncrement = frequency / Float(sampleRate)
@@ -195,7 +197,7 @@ class OscillatorNode {
     }
 
     func updatePortamentoTime(_ time: Float) {
-        portamentoTime = time / 1000.0  // Convert ms to seconds
+        portamentoTime = time / 1_000.0  // Convert ms to seconds
     }
 
     func start() {

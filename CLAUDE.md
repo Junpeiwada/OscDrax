@@ -1,10 +1,12 @@
 # CLAUDE.md
 
+このリポジトリで作業する際は、必ず**日本語でレスポンス**してください。
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## プロジェクト概要
 
-OscDraxは音声波形を作成・操作するiOSオシレーターアプリケーションです。4つの独立したトラック、手描き波形作成、プリセット波形、リアルタイム周波数制御を備えています。
+OscDraxは音声波形を作成・操作するiOSオシレーターアプリケーションです。4つの独立したトラック、手描き波形作成、プリセット波形、リアルタイム周波数制御、AVAudioEngineベースのオーディオ合成を備えています。
 
 ## コマンド
 
@@ -12,9 +14,9 @@ OscDraxは音声波形を作成・操作するiOSオシレーターアプリケ�
 # 開発
 make lint          # SwiftLintでコードスタイルをチェック
 make lint-fix      # SwiftLintで自動修正
-make format        # SwiftLintでコードフォーマット
-make build         # Xcodeプロジェクトをビルド
-make clean         # ビルド成果物をクリーン
+make format        # SwiftLintでコードフォーマット（--fixと--formatフラグ付き）
+make build         # Xcodeプロジェクトをビルド（macOS向けDebugビルド）
+make clean         # ビルド成果物とDerivedDataをクリーン
 make test          # ユニットテストを実行
 
 # Xcodeで開く
@@ -23,54 +25,81 @@ open OscDrax.xcodeproj
 
 ## アーキテクチャ
 
-### コアモデル
-- **Track.swift**: SwiftUIバインディング用の`@Published`プロパティを持つ中央データモデル
-  - 波形データ（512ポイント）、周波数（20-20000Hz）、音量、ポルタメント設定を含む
-  - JSON永続化のため`Codable`を実装
-  - プリセット波形（サイン波、三角波、矩形波）を生成
+### オーディオエンジン
+- **AudioEngine.swift**: AVAudioEngineベースのオーディオ合成システム
+  - 4つの独立したOscillatorNodeインスタンスをAVAudioMixerNodeで管理
+  - AudioSessionの設定とエンジンのセットアップを処理
+  - トラックごとの周波数、音量、波形、ポルタメント制御API
+
+- **OscillatorNode.swift**: カスタムウェーブテーブルシンセサイザー実装
+  - AVAudioSourceNodeを使用したリアルタイムオーディオ生成
+  - 512ポイントのウェーブテーブル補間
+  - ポルタメント（周波数スムージング）機能
+  - ロックフリーのパラメータ更新キュー
+  - フェーズアキュムレータによる高精度波形生成
+
+### データモデル
+- **Track.swift**: ObservableObjectプロトコルを実装した中央データモデル
+  - 波形データ（512ポイント配列）
+  - 周波数範囲: 20-20000Hz（対数スケール）
+  - 音量: 0-1の範囲
+  - ポルタメントタイム: 0-1秒
+  - プリセット波形生成（サイン、三角、矩形、ノコギリ）
+  - Codableプロトコルによる永続化対応
+
+### 永続化
+- **PersistenceManager.swift**: JSON形式でのトラックデータ保存/読み込み
+  - Documentsディレクトリへの自動保存
+  - 4トラックのバッチ保存/読み込み
+  - エラーハンドリング付きファイル操作
 
 ### ビューアーキテクチャ
-- **ContentView.swift**: 4つのTrackインスタンスを`@StateObject`として管理するメインコンテナ
-  - トラック選択を処理し、選択されたトラックを子ビューに渡す
-- **WaveformDisplayView.swift**: タッチ描画機能付きのインタラクティブな波形表示
-  - タッチ座標を512ポイントの波形データに変換
-  - バインディングを通じてTrackモデルを直接更新
-- **LiquidglassStyle.swift**: 一貫したグラスモーフィズムスタイリング用のカスタムUIモディファイアを定義
+- **ContentView.swift**: アプリのメインコンテナビュー
+  - 4つのTrackインスタンスを`@StateObject`として管理
+  - AudioManagerとの統合
+  - トラック選択とUI状態管理
 
-### データフロー
-```
-ユーザー入力 → Track @Published → ビュー更新
-                    ↓
-            JSON永続化（計画中）
-```
+- **WaveformDisplayView.swift**: インタラクティブな波形エディタ
+  - ドラッグジェスチャーによる波形描画
+  - リアルタイム波形プレビュー
+  - 512ポイントへの自動補間
 
-### オーディオシステム（計画中）
-AVAudioEngineを使用したオーディオエンジン：
-- スレッドセーフのためのロックフリーパラメータキュー
-- トラックごとの512ポイントウェーブテーブル合成
-- 60Hzのパラメータ更新レート
-- tanh(mixed * 0.7)によるソフトクリッピング
+- **ControlPanelView.swift**: パラメータコントロールUI
+  - 周波数スライダー（対数スケール）
+  - 音量コントロール
+  - ポルタメントタイム調整
 
-## 主要な実装詳細
+### SwiftLint設定
+`.swiftlint.yml`による厳格なコード品質管理：
+- 85以上のopt-inルールを有効化
+- カスタムルール（print文の禁止、MARKフォーマット）
+- アナライザールール（未使用宣言、未使用import）
+- 関数長、型長、複雑度の制限
 
-### 波形描画
-- WaveformDisplayViewでタッチジェスチャーをキャプチャ
-- ポイントを512サンプルに補間
-- [-1, 1]の範囲に正規化
-- Track.waveformData配列に直接保存
+## 重要な実装パターン
 
-### トラック管理
-- ContentView内の4つの独立したTrackインスタンス
-- 選択されたトラックインデックスがUI更新を駆動
-- 各トラックが独自の状態（周波数、音量、波形）を維持
+### スレッドセーフティ
+- AudioEngineとUIスレッド間の適切な同期
+- DispatchQueueによるパラメータ更新の管理
+- ロックフリーキューによるオーディオスレッド最適化
 
-### UIスタイリング
-- Liquidglassモディファイアが一貫したガラス効果を提供
-- 青/紫のグラデーションを使用したダークテーマ
-- ボタン押下状態に応じたシャドウ効果
+### メモリ管理
+- weak参照によるretain cycle回避
+- deinitでの適切なリソース解放
+- AVAudioEngineの明示的な停止処理
 
 ## 現在のステータス
 
-**完了**: UIフレームワーク、トラックモデル、波形表示、トラック切り替え、プリセット波形
+**実装済み**:
+- 完全なUIフレームワーク
+- 4トラックシステム
+- AVAudioEngineオーディオ合成
+- ウェーブテーブル合成
+- JSON永続化
+- ポルタメント機能
+- プリセット波形
 
-**TODO**: AVAudioEngineを使用したオーディオエンジン実装、JSONへの永続化、周波数/音量コントロール
+**進行中/TODO**:
+- MiniWaveformView（トラックタブ用のミニ波形表示）
+- 追加のエフェクト処理
+- MIDI対応（将来的な拡張）
