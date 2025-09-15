@@ -13,6 +13,7 @@ struct ContentView: View {
     @StateObject private var track2 = Track(id: 2)
     @StateObject private var track3 = Track(id: 3)
     @StateObject private var track4 = Track(id: 4)
+    @StateObject private var audioManager = AudioManager.shared
 
     var currentTrack: Track {
         switch selectedTrack {
@@ -51,6 +52,13 @@ struct ContentView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
+        }
+        .onAppear {
+            // Setup audio for all tracks
+            audioManager.setupTrack(track1)
+            audioManager.setupTrack(track2)
+            audioManager.setupTrack(track3)
+            audioManager.setupTrack(track4)
         }
     }
 }

@@ -4,6 +4,8 @@ struct WaveformDisplayView: View {
     @ObservedObject var track: Track
     @State private var currentDrawingPoints: [CGPoint] = []
     @State private var isDrawing = false
+    @State private var touchStartX: CGFloat? = nil
+    @State private var touchEndX: CGFloat? = nil
 
     var body: some View {
         GeometryReader { geometry in
@@ -53,8 +55,18 @@ struct WaveformDisplayView: View {
                     .onChanged { value in
                         if track.waveformType != .custom {
                             track.setWaveformType(.custom)
-                            track.clearCustomWaveform()
+                            // Don't clear, keep existing waveform data
+                            if track.waveformData.isEmpty {
+                                track.waveformData = Array(repeating: 0, count: 512)
+                            }
                         }
+
+                        // Record touch positions
+                        if touchStartX == nil {
+                            touchStartX = value.location.x
+                        }
+                        touchEndX = value.location.x
+
                         isDrawing = true
                         let location = value.location
                         currentDrawingPoints.append(location)
@@ -63,32 +75,53 @@ struct WaveformDisplayView: View {
                     .onEnded { _ in
                         isDrawing = false
                         currentDrawingPoints.removeAll()
+                        touchStartX = nil
+                        touchEndX = nil
                     }
             )
         }
     }
 
     private func updateWaveformFromDrawing(in size: CGSize) {
-        guard currentDrawingPoints.count > 1 else { return }
+        guard currentDrawingPoints.count > 1,
+              let startX = touchStartX,
+              let endX = touchEndX else { return }
 
         let padding: CGFloat = 20
         let effectiveWidth = size.width - padding * 2
         let effectiveHeight = size.height - padding * 2
 
-        var newWaveform = Array(repeating: Float(0), count: 512)
+        // Calculate the range of indices to update
+        let minX = min(startX, endX)
+        let maxX = max(startX, endX)
 
-        for index in 0..<512 {
+        // Convert X positions to waveform indices
+        let startIndex = max(0, Int(((minX - padding) / effectiveWidth) * 511))
+        let endIndex = min(511, Int(((maxX - padding) / effectiveWidth) * 511))
+
+        // Start with existing waveform data or create new if empty
+        var updatedWaveform = track.waveformData.isEmpty ?
+            Array(repeating: Float(0), count: 512) : track.waveformData
+
+        // Only update the touched range
+        for index in startIndex...endIndex {
             let xPos = CGFloat(index) / 511.0 * effectiveWidth + padding
+
+            // Find the closest drawn point for this index
             let closestPoint = currentDrawingPoints.min(by: { abs($0.x - xPos) < abs($1.x - xPos) })
 
             if let point = closestPoint {
-                let normalizedY = Float((point.y - padding) / effectiveHeight)
-                let waveValue = 1.0 - normalizedY * 2.0
-                newWaveform[index] = max(-1.0, min(1.0, waveValue))
+                // Only update if the point is within reasonable horizontal distance
+                let horizontalDistance = abs(point.x - xPos)
+                if horizontalDistance < effectiveWidth / 50 { // Threshold for proximity
+                    let normalizedY = Float((point.y - padding) / effectiveHeight)
+                    let waveValue = 1.0 - normalizedY * 2.0
+                    updatedWaveform[index] = max(-1.0, min(1.0, waveValue))
+                }
             }
         }
 
-        track.waveformData = newWaveform
+        track.waveformData = updatedWaveform
     }
 }
 

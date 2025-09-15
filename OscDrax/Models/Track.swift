@@ -93,6 +93,7 @@ class Track: ObservableObject, Identifiable, Codable {
     }
 
     func clearCustomWaveform() {
+        // Generate a default flat line at center
         waveformData = Array(repeating: 0, count: 512)
     }
 }
