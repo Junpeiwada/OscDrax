@@ -6,6 +6,7 @@ class AudioEngine: ObservableObject {
     private let mixer = AVAudioMixerNode()
     private var oscillatorNodes: [Int: OscillatorNode] = [:]
     private let sampleRate: Double = 44100.0
+    private let mixerVolume: Float = 0.5  // Master volume to prevent clipping with 4 tracks
 
     init() {
         setupEngine()
@@ -27,6 +28,9 @@ class AudioEngine: ObservableObject {
     private func setupEngine() {
         engine.attach(mixer)
         engine.connect(mixer, to: engine.mainMixerNode, format: nil)
+
+        // Set mixer volume to prevent clipping when multiple tracks play
+        mixer.outputVolume = mixerVolume
 
         do {
             try engine.start()
@@ -80,10 +84,13 @@ class OscillatorNode {
     private let tableSize = 512
     private var isPlaying = false
     private weak var track: Track?
+    private let parameterQueue = DispatchQueue(label: "com.oscdraw.parameter", attributes: .concurrent)
 
     var frequency: Float = 440.0 {
         didSet {
-            updatePhaseIncrement()
+            parameterQueue.async(flags: .barrier) {
+                self.updatePhaseIncrement()
+            }
         }
     }
 
@@ -122,7 +129,9 @@ class OscillatorNode {
                     let sample1 = self.waveformTable[index1]
                     let interpolatedSample = sample0 + fraction * (sample1 - sample0)
 
-                    data[frame] = interpolatedSample * self.volume
+                    // Apply volume and soft clipping
+                    let rawSample = interpolatedSample * self.volume
+                    data[frame] = tanh(rawSample * 0.9)  // Soft clipping to prevent distortion
 
                     self.phase += self.phaseIncrement
                     if self.phase >= 1.0 {
