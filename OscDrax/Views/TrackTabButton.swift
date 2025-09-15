@@ -13,10 +13,10 @@ struct TrackTabButton: View {
                 ZStack {
                     if track.isPlaying {
                         Circle()
-                            .fill(Color.green)
+                            .fill(AppTheme.Colors.TrackTab.playingIndicator)
                             .frame(width: 12, height: 12)
-                            .shadow(color: .green, radius: 8)
-                            .shadow(color: .green.opacity(0.5), radius: 12)
+                            .shadow(color: AppTheme.Colors.TrackTab.playingIndicator, radius: 8)
+                            .shadow(color: AppTheme.Colors.TrackTab.playingIndicator.opacity(0.5), radius: 12)
                     } else {
                         Text(" ")
                             .font(.system(size: 12))

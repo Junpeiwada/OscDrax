@@ -72,11 +72,9 @@ struct LiquidglassButtonStyle: ButtonStyle {
                     RoundedRectangle(cornerRadius: 15)
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color(red: 0.1, green: 0.4, blue: 0.2,
-                                          opacity: configuration.isPressed ? 0.5 : 0.7),
-                                    Color(red: 0.05, green: 0.3, blue: 0.1, opacity: configuration.isPressed ? 0.4 : 0.6)
-                                ]),
+                                gradient: Gradient(colors: AppTheme.Colors.Button.normalBackgroundGradient.map { color in
+                                    color.opacity(configuration.isPressed ? 0.5 : 0.7)
+                                }),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -137,19 +135,12 @@ struct PlayStopButtonStyle: ButtonStyle {
                     RoundedRectangle(cornerRadius: 15)
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: isStop ? [
-                                    // Dark red for Stop
-                                    Color(red: 0.4, green: 0.1, blue: 0.1,
-                                          opacity: configuration.isPressed ? 0.5 : 0.7),
-                                    Color(red: 0.3, green: 0.05, blue: 0.05, 
-                                          opacity: configuration.isPressed ? 0.4 : 0.6)
-                                ] : [
-                                    // Green for Play
-                                    Color(red: 0.1, green: 0.5, blue: 0.2,
-                                          opacity: configuration.isPressed ? 0.5 : 0.7),
-                                    Color(red: 0.05, green: 0.4, blue: 0.1,
-                                          opacity: configuration.isPressed ? 0.4 : 0.6)
-                                ]),
+                                gradient: Gradient(colors: (isStop ?
+                                    AppTheme.Colors.Button.stopBackgroundGradient :
+                                    AppTheme.Colors.Button.playBackgroundGradient
+                                ).map { color in
+                                    color.opacity(configuration.isPressed ? 0.5 : 0.7)
+                                }),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -174,13 +165,10 @@ struct PlayStopButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: 15)
                     .stroke(
                         LinearGradient(
-                            gradient: Gradient(colors: isStop ? [
-                                Color.red.opacity(0.5),
-                                Color.red.opacity(0.2)
-                            ] : [
-                                Color.white.opacity(0.7),
-                                Color.white.opacity(0.3)
-                            ]),
+                            gradient: Gradient(colors: isStop ?
+                                AppTheme.Colors.Button.stopBorder :
+                                AppTheme.Colors.Button.playBorder
+                            ),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
@@ -191,9 +179,9 @@ struct PlayStopButtonStyle: ButtonStyle {
                     radius: configuration.isPressed ? 3 : 8,
                     x: configuration.isPressed ? 2 : 5,
                     y: configuration.isPressed ? 2 : 5)
-            .shadow(color: isStop ? 
-                    Color(red: 0.3, green: 0.1, blue: 0.1, opacity: 0.3) :
-                    Color(white: 0.4, opacity: 0.3),
+            .shadow(color: isStop ?
+                    AppTheme.Colors.Button.stopShadow :
+                    AppTheme.Colors.Button.playShadow,
                     radius: configuration.isPressed ? 3 : 8,
                     x: configuration.isPressed ? -2 : -5,
                     y: configuration.isPressed ? -2 : -5)
@@ -205,7 +193,7 @@ struct PlayStopButtonStyle: ButtonStyle {
 struct LiquidglassSliderStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .tint(Color(red: 0.2, green: 0.9, blue: 0.3))
+            .tint(AppTheme.Colors.Slider.tint)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(

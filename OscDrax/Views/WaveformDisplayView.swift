@@ -25,22 +25,19 @@ struct WaveformDisplayView: View {
 
                 // Grid overlay for oscilloscope effect
                 GridOverlay()
-                    .stroke(Color.green.opacity(0.15), lineWidth: 0.5)
+                    .stroke(AppTheme.Colors.Waveform.grid, lineWidth: 0.5)
                     .padding(20)
 
                 WaveformShape(waveformData: track.waveformData)
                     .stroke(
                         LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(red: 0.2, green: 1.0, blue: 0.3),  // Bright green
-                                Color(red: 0.0, green: 0.8, blue: 0.2)   // Darker green
-                            ]),
+                            gradient: Gradient(colors: AppTheme.Colors.Waveform.gradient),
                             startPoint: .leading,
                             endPoint: .trailing
                         ),
                         lineWidth: 2
                     )
-                    .shadow(color: Color(red: 0.0, green: 1.0, blue: 0.2).opacity(0.6), radius: 4)
+                    .shadow(color: AppTheme.Colors.Waveform.glow, radius: 4)
                     .padding(20)
             }
             .contentShape(Rectangle())

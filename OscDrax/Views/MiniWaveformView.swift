@@ -12,7 +12,7 @@ struct MiniWaveformView: View {
                 WaveformPath(data: downsampledData)
                     .stroke(
                         LinearGradient(
-                            colors: [Color.green.opacity(0.2), Color.green.opacity(0.1)],
+                            colors: [AppTheme.Colors.Waveform.miniBackground, AppTheme.Colors.Waveform.miniActive],
                             startPoint: .leading,
                             endPoint: .trailing
                         ),
@@ -24,7 +24,7 @@ struct MiniWaveformView: View {
                     WaveformPath(data: downsampledData)
                         .stroke(
                             LinearGradient(
-                                colors: [Color(red: 0.2, green: 1.0, blue: 0.3), Color(red: 0.0, green: 0.8, blue: 0.2)],
+                                colors: AppTheme.Colors.Waveform.gradient,
                                 startPoint: .leading,
                                 endPoint: .trailing
                             ),
