@@ -42,5 +42,11 @@ class AudioManager: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+
+        track.$portamentoTime
+            .sink { [weak self] time in
+                self?.audioEngine.updatePortamentoTime(trackId: track.id, time: time)
+            }
+            .store(in: &cancellables)
     }
 }

@@ -47,37 +47,73 @@ struct ContentView: View {
 
                 Spacer()
 
-                TrackTabBar(selectedTrack: $selectedTrack)
+                TrackTabBar(selectedTrack: $selectedTrack, tracks: [track1, track2, track3, track4])
                     .padding(.bottom, 10)
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
         }
         .onAppear {
+            // Load saved state if exists
+            loadSavedTracks()
+
             // Setup audio for all tracks
             audioManager.setupTrack(track1)
             audioManager.setupTrack(track2)
             audioManager.setupTrack(track3)
             audioManager.setupTrack(track4)
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            // Save tracks when app goes to background
+            saveTracks()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
+            // Save tracks when app terminates
+            saveTracks()
+        }
+    }
+
+    private func saveTracks() {
+        let tracks = [track1, track2, track3, track4]
+        PersistenceManager.shared.saveTracks(tracks)
+    }
+
+    private func loadSavedTracks() {
+        guard let savedTracks = PersistenceManager.shared.loadTracks(),
+              savedTracks.count == 4 else { return }
+
+        // Apply saved state to tracks
+        applyTrackState(from: savedTracks[0], to: track1)
+        applyTrackState(from: savedTracks[1], to: track2)
+        applyTrackState(from: savedTracks[2], to: track3)
+        applyTrackState(from: savedTracks[3], to: track4)
+    }
+
+    private func applyTrackState(from source: Track, to target: Track) {
+        target.waveformType = source.waveformType
+        target.waveformData = source.waveformData
+        target.frequency = source.frequency
+        target.volume = source.volume
+        target.portamentoTime = source.portamentoTime
+        // Don't restore isPlaying state to avoid audio playing on launch
     }
 }
 
 struct TrackTabBar: View {
     @Binding var selectedTrack: Int
+    let tracks: [Track]
 
     var body: some View {
         HStack(spacing: 12) {
-            ForEach(1...4, id: \.self) { track in
-                Button(action: {
-                    selectedTrack = track
-                }) {
-                    Text("\(track)")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(selectedTrack == track ? .white : .gray)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(LiquidglassButtonStyle())
+            ForEach(Array(tracks.enumerated()), id: \.offset) { index, track in
+                TrackTabButton(
+                    trackNumber: index + 1,
+                    isSelected: selectedTrack == index + 1,
+                    track: track,
+                    action: {
+                        selectedTrack = index + 1
+                    }
+                )
             }
         }
     }

@@ -69,6 +69,10 @@ class AudioEngine: ObservableObject {
         oscillatorNodes[trackId]?.updateWaveformTable(waveformData)
     }
 
+    func updatePortamentoTime(trackId: Int, time: Float) {
+        oscillatorNodes[trackId]?.updatePortamentoTime(time)
+    }
+
     deinit {
         engine.stop()
     }
@@ -86,10 +90,26 @@ class OscillatorNode {
     private weak var track: Track?
     private let parameterQueue = DispatchQueue(label: "com.oscdraw.parameter", attributes: .concurrent)
 
+    // Portamento parameters
+    private var targetFrequency: Float = 440.0
+    private var currentFrequency: Float = 440.0
+    private var portamentoTime: Float = 0.0  // in seconds
+    private var portamentoRate: Float = 0.0
+    private var isPortamentoActive = false
+
     var frequency: Float = 440.0 {
         didSet {
             parameterQueue.async(flags: .barrier) {
-                self.updatePhaseIncrement()
+                self.targetFrequency = self.frequency
+                if self.portamentoTime > 0 {
+                    self.isPortamentoActive = true
+                    // Calculate rate based on log scale for musical perception
+                    let logDiff = log2(self.targetFrequency / self.currentFrequency)
+                    self.portamentoRate = logDiff / (self.portamentoTime * Float(self.sampleRate))
+                } else {
+                    self.currentFrequency = self.frequency
+                    self.updatePhaseIncrement()
+                }
             }
         }
     }
@@ -100,8 +120,11 @@ class OscillatorNode {
         self.sampleRate = sampleRate
         self.track = track
         self.frequency = track.frequency
+        self.currentFrequency = track.frequency
+        self.targetFrequency = track.frequency
         self.volume = track.volume
         self.waveformTable = track.waveformData
+        self.portamentoTime = track.portamentoTime / 1000.0  // Convert ms to seconds
 
         // Initialize phase increment before creating source node
         self.phaseIncrement = frequency / Float(sampleRate)
@@ -119,6 +142,20 @@ class OscillatorNode {
 
             if self.isPlaying && !self.waveformTable.isEmpty {
                 for frame in 0..<Int(frameCount) {
+                    // Update frequency with portamento
+                    if self.isPortamentoActive {
+                        let freqRatio = self.targetFrequency / self.currentFrequency
+                        if abs(freqRatio - 1.0) < 0.001 {
+                            // Close enough to target
+                            self.currentFrequency = self.targetFrequency
+                            self.isPortamentoActive = false
+                        } else {
+                            // Apply exponential portamento
+                            self.currentFrequency *= pow(2.0, self.portamentoRate)
+                        }
+                        self.phaseIncrement = self.currentFrequency / Float(self.sampleRate)
+                    }
+
                     // Linear interpolation for smooth waveform
                     let tableIndex = self.phase * Float(self.tableSize)
                     let index0 = Int(tableIndex) % self.tableSize
@@ -155,6 +192,10 @@ class OscillatorNode {
 
     func updateWaveformTable(_ newTable: [Float]) {
         waveformTable = newTable
+    }
+
+    func updatePortamentoTime(_ time: Float) {
+        portamentoTime = time / 1000.0  // Convert ms to seconds
     }
 
     func start() {

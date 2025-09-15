@@ -24,7 +24,7 @@ class Track: ObservableObject, Identifiable, Codable {
     @Published var frequency: Float = 440.0
     @Published var volume: Float = 0.5
     @Published var isPlaying: Bool = false
-    @Published var portamentoTime: Float = 0.0
+    @Published var portamentoTime: Float = 20.0  // Fixed at 20ms for smooth transitions
 
     init(id: Int) {
         self.id = id
