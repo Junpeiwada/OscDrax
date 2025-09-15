@@ -9,10 +9,20 @@ struct TrackTabButton: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 2) {
-                // Playing status (speaker emoji only when playing)
-                Text(track.isPlaying ? "🔊" : " ")
-                    .font(.system(size: 12))
-                    .frame(height: 14)
+                // Playing status (green dot with glow when playing)
+                ZStack {
+                    if track.isPlaying {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 12, height: 12)
+                            .shadow(color: .green, radius: 8)
+                            .shadow(color: .green.opacity(0.5), radius: 12)
+                    } else {
+                        Text(" ")
+                            .font(.system(size: 12))
+                    }
+                }
+                .frame(height: 14)
 
                 // Mini waveform display with animation
                 MiniWaveformView(
@@ -21,11 +31,6 @@ struct TrackTabButton: View {
                 )
                 .frame(height: 20)
                 .padding(.horizontal, 4)
-
-                // Frequency display
-                Text("\(Int(track.frequency))Hz")
-                    .font(.system(size: 10, weight: .medium))
-                    .lineLimit(1)
 
                 // Volume bar (proportional display)
                 Text(volumeBar(track.volume))

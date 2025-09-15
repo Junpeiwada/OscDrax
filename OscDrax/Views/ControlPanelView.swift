@@ -16,7 +16,7 @@ struct ControlPanelView: View {
 struct FrequencyControlView: View {
     @Binding var frequency: Float
     private let minFreq: Float = 20
-    private let maxFreq: Float = 20_000
+    private let maxFreq: Float = 20000
 
     var body: some View {
         HStack(spacing: 12) {
@@ -89,7 +89,7 @@ struct PortamentoControlView: View {
                 .foregroundColor(.white.opacity(0.8))
                 .frame(width: 80, alignment: .leading)
 
-            Slider(value: $portamentoTime, in: 0...1_000)
+            Slider(value: $portamentoTime, in: 0...1000)
                 .liquidglassSliderStyle()
 
             Text("\(Int(portamentoTime))ms")

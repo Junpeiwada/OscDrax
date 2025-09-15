@@ -23,18 +23,24 @@ struct WaveformDisplayView: View {
                     )
                     .liquidglassStyle(intensity: 0.8)
 
+                // Grid overlay for oscilloscope effect
+                GridOverlay()
+                    .stroke(Color.green.opacity(0.15), lineWidth: 0.5)
+                    .padding(20)
+
                 WaveformShape(waveformData: track.waveformData)
                     .stroke(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                Color.cyan,
-                                Color.blue
+                                Color(red: 0.2, green: 1.0, blue: 0.3),  // Bright green
+                                Color(red: 0.0, green: 0.8, blue: 0.2)   // Darker green
                             ]),
                             startPoint: .leading,
                             endPoint: .trailing
                         ),
                         lineWidth: 2
                     )
+                    .shadow(color: Color(red: 0.0, green: 1.0, blue: 0.2).opacity(0.6), radius: 4)
                     .padding(20)
             }
             .contentShape(Rectangle())
@@ -110,6 +116,30 @@ struct WaveformDisplayView: View {
         }
 
         track.waveformData = updatedWaveform
+    }
+}
+
+struct GridOverlay: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+
+        // Vertical lines (10 divisions)
+        let verticalSpacing = rect.width / 10
+        for i in 0...10 {
+            let x = CGFloat(i) * verticalSpacing
+            path.move(to: CGPoint(x: x, y: 0))
+            path.addLine(to: CGPoint(x: x, y: rect.height))
+        }
+
+        // Horizontal lines (8 divisions)
+        let horizontalSpacing = rect.height / 8
+        for i in 0...8 {
+            let y = CGFloat(i) * horizontalSpacing
+            path.move(to: CGPoint(x: 0, y: y))
+            path.addLine(to: CGPoint(x: rect.width, y: y))
+        }
+
+        return path
     }
 }
 

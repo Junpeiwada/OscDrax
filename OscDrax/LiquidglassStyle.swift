@@ -73,9 +73,9 @@ struct LiquidglassButtonStyle: ButtonStyle {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color(red: 0.2, green: 0.3, blue: 0.5,
+                                    Color(red: 0.1, green: 0.4, blue: 0.2,
                                           opacity: configuration.isPressed ? 0.5 : 0.7),
-                                    Color(red: 0.1, green: 0.2, blue: 0.4, opacity: configuration.isPressed ? 0.4 : 0.6)
+                                    Color(red: 0.05, green: 0.3, blue: 0.1, opacity: configuration.isPressed ? 0.4 : 0.6)
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -144,10 +144,10 @@ struct PlayStopButtonStyle: ButtonStyle {
                                     Color(red: 0.3, green: 0.05, blue: 0.05, 
                                           opacity: configuration.isPressed ? 0.4 : 0.6)
                                 ] : [
-                                    // Current blue/purple for Play
-                                    Color(red: 0.2, green: 0.3, blue: 0.5,
+                                    // Green for Play
+                                    Color(red: 0.1, green: 0.5, blue: 0.2,
                                           opacity: configuration.isPressed ? 0.5 : 0.7),
-                                    Color(red: 0.1, green: 0.2, blue: 0.4, 
+                                    Color(red: 0.05, green: 0.4, blue: 0.1,
                                           opacity: configuration.isPressed ? 0.4 : 0.6)
                                 ]),
                                 startPoint: .topLeading,
@@ -205,7 +205,7 @@ struct PlayStopButtonStyle: ButtonStyle {
 struct LiquidglassSliderStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .tint(Color(red: 0.3, green: 0.6, blue: 0.9))
+            .tint(Color(red: 0.2, green: 0.9, blue: 0.3))
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(
