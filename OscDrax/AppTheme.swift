@@ -42,16 +42,16 @@ struct AppTheme {
             /// #1A6633 (RGB:0.1,0.4,0.2) → H:0.375, S:0.75, B:0.4
             /// #0D4D1A (RGB:0.05,0.3,0.1) → H:0.375, S:0.833, B:0.3
             static let playBackgroundGradient = [
-                Color(UIColor(hue: 0.375, saturation: 0.75, brightness: 0.4, alpha: 1.0)),
-                Color(UIColor(hue: 0.375, saturation: 0.75, brightness: 0.3, alpha: 1.0))
+                Color(UIColor(hue: 0.333, saturation: 0.75, brightness: 0.4, alpha: 1.0)),
+                Color(UIColor(hue: 0.333, saturation: 0.75, brightness: 0.3, alpha: 1.0))
             ]
 
             /// Stopボタンの背景グラデーション（再生中・明るい緑）
             /// #1AB333 (RGB:0.1,0.7,0.2) → H:0.375, S:0.857, B:0.7
             /// #0D991A (RGB:0.05,0.6,0.1) → H:0.375, S:0.917, B:0.6
             static let stopBackgroundGradient = [
-                Color(UIColor(hue: 0.375, saturation: 0.857, brightness: 0.6, alpha: 1.0)),
-                Color(UIColor(hue: 0.375, saturation: 0.857, brightness: 0.7, alpha: 1.0))
+                Color(UIColor(hue: 0.333, saturation: 0.857, brightness: 0.6, alpha: 1.0)),
+                Color(UIColor(hue: 0.333, saturation: 0.857, brightness: 0.7, alpha: 1.0))
             ]
 
             /// Playボタンのボーダー
@@ -76,8 +76,14 @@ struct AppTheme {
 
             /// 通常ボタンの背景グラデーション
             static let normalBackgroundGradient = [
-                Color(UIColor(hue: 0.375, saturation: 0.857, brightness: 0.6, alpha: 1.0)),
-                Color(UIColor(hue: 0.375, saturation: 0.857, brightness: 0.7, alpha: 1.0))
+                Color(UIColor(hue: 0.333, saturation: 0.357, brightness: 0.3, alpha: 1.0)),
+                Color(UIColor(hue: 0.333, saturation: 0.357, brightness: 0.4, alpha: 1.0))
+            ]
+            
+            /// 通常ボタンの発音状態背景グラデーション
+            static let normalHighlightBackgroundGradient = [
+                Color(UIColor(hue: 0.333, saturation: 0.857, brightness: 0.6, alpha: 1.0)),
+                Color(UIColor(hue: 0.333, saturation: 0.857, brightness: 0.7, alpha: 1.0))
             ]
         }
 
