@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 enum WaveformType: String, CaseIterable, Codable {
     case sine

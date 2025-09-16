@@ -7,11 +7,11 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		EE3C2C292E77C74D0049B89D /* OscDrax.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OscDrax.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EEB535EB2E79AD59001C5545 /* OscDrax.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OscDrax.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		EE3C2C2B2E77C74D0049B89D /* OscDrax */ = {
+		EEB535ED2E79AD59001C5545 /* OscDrax */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = OscDrax;
 			sourceTree = "<group>";
@@ -19,7 +19,7 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		EE3C2C262E77C74D0049B89D /* Frameworks */ = {
+		EEB535E82E79AD59001C5545 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -29,18 +29,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		EE3C2C202E77C74D0049B89D = {
+		EEB535E22E79AD59001C5545 = {
 			isa = PBXGroup;
 			children = (
-				EE3C2C2B2E77C74D0049B89D /* OscDrax */,
-				EE3C2C2A2E77C74D0049B89D /* Products */,
+				EEB535ED2E79AD59001C5545 /* OscDrax */,
+				EEB535EC2E79AD59001C5545 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		EE3C2C2A2E77C74D0049B89D /* Products */ = {
+		EEB535EC2E79AD59001C5545 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				EE3C2C292E77C74D0049B89D /* OscDrax.app */,
+				EEB535EB2E79AD59001C5545 /* OscDrax.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,64 +48,64 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		EE3C2C282E77C74D0049B89D /* OscDrax */ = {
+		EEB535EA2E79AD59001C5545 /* OscDrax */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EE3C2C342E77C74E0049B89D /* Build configuration list for PBXNativeTarget "OscDrax" */;
+			buildConfigurationList = EEB535F62E79AD5A001C5545 /* Build configuration list for PBXNativeTarget "OscDrax" */;
 			buildPhases = (
-				EE3C2C252E77C74D0049B89D /* Sources */,
-				EE3C2C262E77C74D0049B89D /* Frameworks */,
-				EE3C2C272E77C74D0049B89D /* Resources */,
+				EEB535E72E79AD59001C5545 /* Sources */,
+				EEB535E82E79AD59001C5545 /* Frameworks */,
+				EEB535E92E79AD59001C5545 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				EE3C2C2B2E77C74D0049B89D /* OscDrax */,
+				EEB535ED2E79AD59001C5545 /* OscDrax */,
 			);
 			name = OscDrax;
 			packageProductDependencies = (
 			);
 			productName = OscDrax;
-			productReference = EE3C2C292E77C74D0049B89D /* OscDrax.app */;
+			productReference = EEB535EB2E79AD59001C5545 /* OscDrax.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		EE3C2C212E77C74D0049B89D /* Project object */ = {
+		EEB535E32E79AD59001C5545 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1640;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
-					EE3C2C282E77C74D0049B89D = {
-						CreatedOnToolsVersion = 16.4;
+					EEB535EA2E79AD59001C5545 = {
+						CreatedOnToolsVersion = 26.0;
 					};
 				};
 			};
-			buildConfigurationList = EE3C2C242E77C74D0049B89D /* Build configuration list for PBXProject "OscDrax" */;
+			buildConfigurationList = EEB535E62E79AD59001C5545 /* Build configuration list for PBXProject "OscDrax" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = EE3C2C202E77C74D0049B89D;
+			mainGroup = EEB535E22E79AD59001C5545;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = EE3C2C2A2E77C74D0049B89D /* Products */;
+			productRefGroup = EEB535EC2E79AD59001C5545 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				EE3C2C282E77C74D0049B89D /* OscDrax */,
+				EEB535EA2E79AD59001C5545 /* OscDrax */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		EE3C2C272E77C74D0049B89D /* Resources */ = {
+		EEB535E92E79AD59001C5545 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -115,7 +115,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		EE3C2C252E77C74D0049B89D /* Sources */ = {
+		EEB535E72E79AD59001C5545 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -125,7 +125,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		EE3C2C322E77C74E0049B89D /* Debug */ = {
+		EEB535F42E79AD5A001C5545 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -178,19 +178,18 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
-		EE3C2C332E77C74E0049B89D /* Release */ = {
+		EEB535F52E79AD5A001C5545 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -237,76 +236,77 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
-		EE3C2C352E77C74E0049B89D /* Debug */ = {
+		EEB535F72E79AD5A001C5545 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = L897K2C26B;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = OscDrax;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.junpeiwada.OscDrax;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
-		EE3C2C362E77C74E0049B89D /* Release */ = {
+		EEB535F82E79AD5A001C5545 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = L897K2C26B;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = OscDrax;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.junpeiwada.OscDrax;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -315,25 +315,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		EE3C2C242E77C74D0049B89D /* Build configuration list for PBXProject "OscDrax" */ = {
+		EEB535E62E79AD59001C5545 /* Build configuration list for PBXProject "OscDrax" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				EE3C2C322E77C74E0049B89D /* Debug */,
-				EE3C2C332E77C74E0049B89D /* Release */,
+				EEB535F42E79AD5A001C5545 /* Debug */,
+				EEB535F52E79AD5A001C5545 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EE3C2C342E77C74E0049B89D /* Build configuration list for PBXNativeTarget "OscDrax" */ = {
+		EEB535F62E79AD5A001C5545 /* Build configuration list for PBXNativeTarget "OscDrax" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				EE3C2C352E77C74E0049B89D /* Debug */,
-				EE3C2C362E77C74E0049B89D /* Release */,
+				EEB535F72E79AD5A001C5545 /* Debug */,
+				EEB535F82E79AD5A001C5545 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = EE3C2C212E77C74D0049B89D /* Project object */;
+	rootObject = EEB535E32E79AD59001C5545 /* Project object */;
 }
