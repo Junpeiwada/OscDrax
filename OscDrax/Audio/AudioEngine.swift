@@ -89,11 +89,42 @@ class OscillatorNode {
     private let sampleRate: Double
     private var phase: Float = 0.0
     private var phaseIncrement: Float = 0.0
-    private var waveformTable: [Float] = []
+    
+    // Thread-safe waveform data with double buffering
+    private class WaveformBuffer {
+        private var current: [Float] = []
+        private var next: [Float]?
+        private let lock = NSLock()
+        
+        func read() -> [Float] {
+            lock.lock()
+            defer { lock.unlock() }
+            if let next = next {
+                current = next
+                self.next = nil
+            }
+            return current
+        }
+        
+        func write(_ data: [Float]) {
+            lock.lock()
+            defer { lock.unlock() }
+            next = data
+        }
+    }
+    
+    private let waveformBuffer = WaveformBuffer()
     private let tableSize = 512
-    private var isPlaying = false
+    
+    // Thread-safe properties using NSLock
+    private let stateLock = NSLock()
+    private var _isPlaying = false
+    private var _volume: Float = 0.5
+    private var _frequency: Float = 440.0
+    private var _portamentoTime: Float = 0.0
+    private var _vibratoEnabled = false
+    
     private weak var track: Track?
-    private let parameterQueue = DispatchQueue(label: "com.oscdraw.parameter", attributes: .concurrent)
     
     // Fade-in/out parameters
     private var fadeState: FadeState = .idle
@@ -109,53 +140,86 @@ class OscillatorNode {
     }
     
     // Frequency with portamento
-    private var targetFrequency: Float = 440.0
     private var currentFrequency: Float = 440.0
-    private var portamentoTime: Float = 0.0
     private var portamentoRate: Float = 0.0
     private var isPortamentoActive = false
     
     // Vibrato parameters
-    var vibratoEnabled: Bool = false
     private let vibratoRate: Float = 5.0     // Hz
     private let vibratoDepth: Float = 0.01   // 1% frequency modulation
     private var vibratoPhase: Float = 0.0
     private var frequencyStableTime: Float = 0.0
     private let vibratoDelayTime: Float = 0.5  // 500ms delay before vibrato starts
     
-    var frequency: Float = 440.0 {
-        didSet {
-            parameterQueue.async(flags: .barrier) {
-                self.targetFrequency = self.frequency
-                if self.portamentoTime > 0 {
-                    // Calculate exponential portamento rate for 90% target in specified time
-                    let targetRatio = log2(self.targetFrequency / self.currentFrequency)
-                    self.portamentoRate = targetRatio * 0.9 / (self.portamentoTime * Float(self.sampleRate))
-                    self.isPortamentoActive = true
-                    self.frequencyStableTime = 0.0  // Reset stability timer
-                } else {
-                    // Instant frequency change
-                    self.currentFrequency = self.frequency
-                    self.updatePhaseIncrement()
-                }
+    var frequency: Float {
+        get {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            return _frequency
+        }
+        set {
+            stateLock.lock()
+            let oldValue = _frequency
+            _frequency = newValue
+            let portTime = _portamentoTime
+            stateLock.unlock()
+            
+            // Calculate portamento if needed
+            if portTime > 0 && oldValue != newValue {
+                let targetRatio = log2(newValue / currentFrequency)
+                portamentoRate = targetRatio * 0.9 / (portTime * Float(sampleRate))
+                isPortamentoActive = true
+                frequencyStableTime = 0.0
+            } else {
+                currentFrequency = newValue
+                updatePhaseIncrement()
             }
         }
     }
     
-    var volume: Float = 0.5
+    var volume: Float {
+        get {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            return _volume
+        }
+        set {
+            stateLock.lock()
+            _volume = newValue
+            stateLock.unlock()
+        }
+    }
+    
+    var vibratoEnabled: Bool {
+        get {
+            stateLock.lock()
+            defer { stateLock.unlock() }
+            return _vibratoEnabled
+        }
+        set {
+            stateLock.lock()
+            _vibratoEnabled = newValue
+            stateLock.unlock()
+        }
+    }
+    
+    var isPlaying: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return _isPlaying
+    }
     
     init(sampleRate: Double, track: Track) {
         self.sampleRate = sampleRate
         self.track = track
-        self.frequency = track.frequency
+        self._frequency = track.frequency
         self.currentFrequency = track.frequency
-        self.targetFrequency = track.frequency
-        self.volume = track.volume
-        self.waveformTable = track.waveformData
-        self.portamentoTime = track.portamentoTime / 1_000.0  // Convert ms to seconds
+        self._volume = track.volume
+        self.waveformBuffer.write(track.waveformData)
+        self._portamentoTime = track.portamentoTime / 1_000.0
         
         // Initialize phase increment before creating source node
-        self.phaseIncrement = frequency / Float(sampleRate)
+        self.phaseIncrement = track.frequency / Float(sampleRate)
         
         // Create AVAudioSourceNode with proper format
         let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
@@ -168,9 +232,19 @@ class OscillatorNode {
                 return noErr
             }
             
+            // Get current values thread-safely
+            self.stateLock.lock()
+            let isCurrentlyPlaying = self._isPlaying
+            let currentVolume = self._volume
+            let targetFreq = self._frequency
+            let vibratoOn = self._vibratoEnabled
+            self.stateLock.unlock()
+            
+            let waveformTable = self.waveformBuffer.read()
+            
             let fadeSamples = Int(self.fadeTime * Float(self.sampleRate))
             
-            if self.isPlaying && !self.waveformTable.isEmpty {
+            if isCurrentlyPlaying && !waveformTable.isEmpty {
                 for frame in 0..<Int(frameCount) {
                     // Update fade state
                     switch self.fadeState {
@@ -187,7 +261,9 @@ class OscillatorNode {
                         if self.fadeProgress <= 0.0 {
                             self.fadeProgress = 0.0
                             self.fadeState = .idle
-                            self.isPlaying = false
+                            self.stateLock.lock()
+                            self._isPlaying = false
+                            self.stateLock.unlock()
                             self.phase = 0.0  // Reset phase when fully stopped
                         }
                         self.currentAmplitude = self.fadeProgress * self.fadeProgress  // Quadratic fade-out
@@ -201,10 +277,10 @@ class OscillatorNode {
                     
                     // Update frequency with portamento
                     if self.isPortamentoActive {
-                        let freqRatio = self.targetFrequency / self.currentFrequency
+                        let freqRatio = targetFreq / self.currentFrequency
                         if abs(freqRatio - 1.0) < 0.001 {
                             // Close enough to target
-                            self.currentFrequency = self.targetFrequency
+                            self.currentFrequency = targetFreq
                             self.isPortamentoActive = false
                         } else {
                             // Apply exponential portamento
@@ -219,7 +295,7 @@ class OscillatorNode {
                     
                     // Calculate actual frequency with vibrato if enabled
                     var actualFrequency = self.currentFrequency
-                    if self.vibratoEnabled && self.frequencyStableTime >= self.vibratoDelayTime && !self.isPortamentoActive {
+                    if vibratoOn && self.frequencyStableTime >= self.vibratoDelayTime && !self.isPortamentoActive {
                         // Apply vibrato after 500ms of stable frequency
                         let vibratoModulation = sin(self.vibratoPhase * 2.0 * Float.pi)
                         actualFrequency = self.currentFrequency * (1.0 + vibratoModulation * self.vibratoDepth)
@@ -240,22 +316,22 @@ class OscillatorNode {
                     // Linear interpolation for smooth waveform
                     var interpolatedSample: Float = 0.0
 
-                    if !self.waveformTable.isEmpty {
-                        let tableIndex = self.phase * Float(self.waveformTable.count)
-                        let index0 = Int(tableIndex) % self.waveformTable.count
-                        let index1 = (index0 + 1) % self.waveformTable.count
+                    if !waveformTable.isEmpty {
+                        let tableIndex = self.phase * Float(waveformTable.count)
+                        let index0 = Int(tableIndex) % waveformTable.count
+                        let index1 = (index0 + 1) % waveformTable.count
                         let fraction = tableIndex - Float(index0)
 
-                        if index0 < self.waveformTable.count && index1 < self.waveformTable.count {
-                            let sample0 = self.waveformTable[index0]
-                            let sample1 = self.waveformTable[index1]
+                        if index0 < waveformTable.count && index1 < waveformTable.count {
+                            let sample0 = waveformTable[index0]
+                            let sample1 = waveformTable[index1]
                             interpolatedSample = sample0 + (sample1 - sample0) * fraction
                         }
                     }
                     
                     // Apply volume and fade amplitude with soft clipping
-                    let rawSample = interpolatedSample * self.volume * self.currentAmplitude
-                    data[frame] = tanh(rawSample * 0.7)  // Soft clipping as per spec.md
+                    let rawSample = interpolatedSample * currentVolume * self.currentAmplitude
+                    data[frame] = tanh(rawSample * 0.7)  // Soft clipping
                     
                     // Update phase
                     self.phase += self.phaseIncrement
@@ -275,19 +351,23 @@ class OscillatorNode {
     }
     
     private func updatePhaseIncrement() {
-        phaseIncrement = frequency / Float(sampleRate)
+        phaseIncrement = currentFrequency / Float(sampleRate)
     }
     
     func updateWaveformTable(_ newTable: [Float]) {
-        waveformTable = newTable
+        waveformBuffer.write(newTable)
     }
     
     func updatePortamentoTime(_ time: Float) {
-        portamentoTime = time / 1_000.0  // Convert ms to seconds
+        stateLock.lock()
+        _portamentoTime = time / 1_000.0
+        stateLock.unlock()
     }
     
     func start() {
-        isPlaying = true
+        stateLock.lock()
+        _isPlaying = true
+        stateLock.unlock()
         fadeState = .fadingIn
         fadeProgress = 0.0
     }

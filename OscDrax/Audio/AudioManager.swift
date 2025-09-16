@@ -12,8 +12,11 @@ class AudioManager: ObservableObject {
         // Create oscillator for the track
         audioEngine.createOscillator(for: track)
 
-        // Observe track changes
+        // Observe track changes with appropriate debouncing
+
+        // Immediate response for play/stop (no debounce)
         track.$isPlaying
+            .removeDuplicates()
             .sink { [weak self] isPlaying in
                 if isPlaying {
                     self?.audioEngine.startOscillator(trackId: track.id)
@@ -23,19 +26,27 @@ class AudioManager: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // Debounced frequency updates (5ms for smooth slider response)
         track.$frequency
+            .removeDuplicates()
+            .debounce(for: .milliseconds(5), scheduler: DispatchQueue.main)
             .sink { [weak self] frequency in
                 self?.audioEngine.updateFrequency(trackId: track.id, frequency: frequency)
             }
             .store(in: &cancellables)
 
+        // Debounced volume updates (5ms for smooth slider response)
         track.$volume
+            .removeDuplicates()
+            .debounce(for: .milliseconds(5), scheduler: DispatchQueue.main)
             .sink { [weak self] volume in
                 self?.audioEngine.updateVolume(trackId: track.id, volume: volume)
             }
             .store(in: &cancellables)
 
+        // Slightly longer debounce for waveform data (10ms)
         track.$waveformData
+            .debounce(for: .milliseconds(10), scheduler: DispatchQueue.main)
             .sink { [weak self] waveformData in
                 if !waveformData.isEmpty {
                     self?.audioEngine.updateWaveform(trackId: track.id, waveformData: waveformData)
@@ -43,13 +54,18 @@ class AudioManager: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // Debounced portamento time updates (10ms)
         track.$portamentoTime
+            .removeDuplicates()
+            .debounce(for: .milliseconds(10), scheduler: DispatchQueue.main)
             .sink { [weak self] time in
                 self?.audioEngine.updatePortamentoTime(trackId: track.id, time: time)
             }
             .store(in: &cancellables)
 
+        // Immediate response for vibrato toggle
         track.$vibratoEnabled
+            .removeDuplicates()
             .sink { [weak self] enabled in
                 self?.audioEngine.updateVibratoEnabled(trackId: track.id, enabled: enabled)
             }
