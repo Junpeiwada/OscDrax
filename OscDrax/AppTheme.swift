@@ -6,94 +6,91 @@ struct AppTheme {
         // MARK: - 背景
         /// ContentViewの背景グラデーション
         static let backgroundGradient = [
-            Color(red: 0.1, green: 0.1, blue: 0.1),    // 開始色（左上）
-            Color(red: 0.05, green: 0.05, blue: 0.05)  // 終了色（右下）
+            // #1A1A1A (RGB: 0.1, 0.1, 0.1) → H:0, S:0, B:0.1
+            Color(UIColor(hue: 0.0, saturation: 0.0, brightness: 0.1, alpha: 1.0)),
+            // #0D0D0D (RGB: 0.05, 0.05, 0.05) → H:0, S:0, B:0.05
+            Color(UIColor(hue: 0.0, saturation: 0.0, brightness: 0.05, alpha: 1.0))
         ]
 
         // MARK: - 波形表示
         struct Waveform {
             /// メイン波形のグラデーション
-            /// 使用箇所: WaveformDisplayView、MiniWaveformView
+            /// #33FF4D (RGB:0.2,1.0,0.3) → H:0.365, S:0.8, B:1.0
+            /// #00CC33 (RGB:0.0,0.8,0.2) → H:0.375, S:1.0, B:0.8
             static let gradient = [
-                Color(red: 0.2, green: 1.0, blue: 0.3),   // 明るい緑
-                Color(red: 0.0, green: 0.8, blue: 0.2)    // 暗い緑
+                Color(UIColor(hue: 0.365, saturation: 0.8, brightness: 1.0, alpha: 1.0)), // 明るい緑
+                Color(UIColor(hue: 0.365, saturation: 1.0, brightness: 0.8, alpha: 1.0))  // 暗い緑
             ]
 
             /// 波形のグロー効果
-            /// 使用箇所: WaveformDisplayViewの影
-            static let glow = Color(red: 0.0, green: 1.0, blue: 0.2).opacity(0.6)
+            /// #00FF33 (RGB:0.0,1.0,0.2) → H:0.37, S:1.0, B:1.0
+            static let glow = Color(UIColor(hue: 0.37, saturation: 1.0, brightness: 1.0, alpha: 0.6))
 
             /// グリッド線の色
-            /// 使用箇所: WaveformDisplayViewの10x8グリッド
-            static let grid = Color.green.opacity(0.15)
+            static let grid = Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 0.15))
 
             /// ミニ波形の背景色（非再生時）
-            /// 使用箇所: MiniWaveformView
-            static let miniBackground = Color.green.opacity(0.2)
+            static let miniBackground = Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 0.2))
 
             /// ミニ波形のアクティブ色（再生時の暗い部分）
-            /// 使用箇所: MiniWaveformView
-            static let miniActive = Color.green.opacity(0.1)
+            static let miniActive = Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 0.1))
         }
 
         // MARK: - ボタン
         struct Button {
             /// Playボタンの背景グラデーション（停止中・暗い緑）
-            /// 使用箇所: PlayStopButtonStyle（isStop = false）
+            /// #1A6633 (RGB:0.1,0.4,0.2) → H:0.375, S:0.75, B:0.4
+            /// #0D4D1A (RGB:0.05,0.3,0.1) → H:0.375, S:0.833, B:0.3
             static let playBackgroundGradient = [
-                Color(red: 0.05, green: 0.3, blue: 0.1),
-                Color(red: 0.02, green: 0.25, blue: 0.05)
+                Color(UIColor(hue: 0.375, saturation: 0.75, brightness: 0.4, alpha: 1.0)),
+                Color(UIColor(hue: 0.375, saturation: 0.75, brightness: 0.3, alpha: 1.0))
             ]
 
             /// Stopボタンの背景グラデーション（再生中・明るい緑）
-            /// 使用箇所: PlayStopButtonStyle（isStop = true）
+            /// #1AB333 (RGB:0.1,0.7,0.2) → H:0.375, S:0.857, B:0.7
+            /// #0D991A (RGB:0.05,0.6,0.1) → H:0.375, S:0.917, B:0.6
             static let stopBackgroundGradient = [
-                Color(red: 0.1, green: 0.7, blue: 0.2),
-                Color(red: 0.05, green: 0.6, blue: 0.1)
-            ]
-
-            /// 通常ボタンの背景グラデーション
-            /// 使用箇所: LiquidglassButtonStyle（プリセット選択など）
-            static let normalBackgroundGradient = [
-                Color(red: 0.1, green: 0.4, blue: 0.2),
-                Color(red: 0.05, green: 0.3, blue: 0.1)
+                Color(UIColor(hue: 0.375, saturation: 0.857, brightness: 0.6, alpha: 1.0)),
+                Color(UIColor(hue: 0.375, saturation: 0.857, brightness: 0.7, alpha: 1.0))
             ]
 
             /// Playボタンのボーダー
-            /// 使用箇所: PlayStopButtonStyleのストローク（停止中）
             static let playBorder = [
-                Color.green.opacity(0.5),
-                Color.green.opacity(0.2)
+                Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 0.5)),
+                Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 0.2))
             ]
 
             /// Stopボタンのボーダー
-            /// 使用箇所: PlayStopButtonStyleのストローク（再生中）
             static let stopBorder = [
-                Color.green.opacity(0.7),
-                Color.green.opacity(0.3)
+                Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 0.7)),
+                Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 0.3))
             ]
 
             /// Playボタンの影
-            /// 使用箇所: PlayStopButtonStyleのシャドウ（停止中）
-            static let playShadow = Color(red: 0.0, green: 0.3, blue: 0.05).opacity(0.3)
+            /// #004D0D (RGB:0.0,0.3,0.05) → H:0.388, S:1.0, B:0.3
+            static let playShadow = Color(UIColor(hue: 0.388, saturation: 1.0, brightness: 0.3, alpha: 0.3))
 
             /// Stopボタンの影
-            /// 使用箇所: PlayStopButtonStyleのシャドウ（再生中）
-            static let stopShadow = Color(red: 0.0, green: 0.5, blue: 0.1).opacity(0.3)
+            /// #00801A (RGB:0.0,0.5,0.1) → H:0.367, S:1.0, B:0.5
+            static let stopShadow = Color(UIColor(hue: 0.367, saturation: 1.0, brightness: 0.5, alpha: 0.3))
+
+            /// 通常ボタンの背景グラデーション
+            static let normalBackgroundGradient = [
+                Color(UIColor(hue: 0.375, saturation: 0.857, brightness: 0.6, alpha: 1.0)),
+                Color(UIColor(hue: 0.375, saturation: 0.857, brightness: 0.7, alpha: 1.0))
+            ]
         }
 
         // MARK: - スライダー
         struct Slider {
-            /// スライダーのティント色
-            /// 使用箇所: LiquidglassSliderStyle
-            static let tint = Color(red: 0.2, green: 0.9, blue: 0.3)
+            /// #33E64D (RGB:0.2,0.9,0.3) → H:0.37, S:0.78, B:0.9
+            static let tint = Color(UIColor(hue: 0.37, saturation: 0.78, brightness: 0.9, alpha: 1.0))
         }
 
         // MARK: - トラックタブ
         struct TrackTab {
-            /// 再生中インジケーター
-            /// 使用箇所: TrackTabButtonの緑の点
-            static let playingIndicator = Color.green
+            /// 再生中インジケーター: Color.green
+            static let playingIndicator = Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 1.0))
         }
     }
 }
