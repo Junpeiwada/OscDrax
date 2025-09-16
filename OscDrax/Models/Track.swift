@@ -28,6 +28,56 @@ enum ChordType: String, CaseIterable, Codable {
     case power = "Power"
 }
 
+enum ScaleType: String, CaseIterable, Codable {
+    case none = "None"
+    case western = "Western"
+    case japanese = "Japanese"
+    case ryukyu = "Ryukyu"
+    case wholeTone = "Whole Tone"
+
+    var displayName: String { rawValue }
+
+    private var allowedPitchClasses: [Int]? {
+        switch self {
+        case .none:
+            return nil
+        case .western:
+            return Array(0..<12)
+        case .japanese:
+            return [0, 1, 5, 7, 10] // In scale (C, Db, F, G, Bb)
+        case .ryukyu:
+            return [0, 4, 5, 7, 11] // Ryukyu scale (C, E, F, G, B)
+        case .wholeTone:
+            return [0, 2, 4, 6, 8, 10]
+        }
+    }
+
+    func quantizeFrequency(_ frequency: Float) -> Float {
+        guard let allowedPitchClasses = allowedPitchClasses, frequency > 0 else {
+            return frequency
+        }
+
+        let midiValue = 69.0 + 12.0 * log2(Double(frequency) / 440.0)
+        var bestNote = Int(round(midiValue))
+        var bestDistance = Double.greatestFiniteMagnitude
+
+        let searchRange = (bestNote - 36)...(bestNote + 36)
+        for note in searchRange {
+            let normalizedPitchClass = ((note % 12) + 12) % 12
+            guard allowedPitchClasses.contains(normalizedPitchClass) else { continue }
+
+            let distance = abs(Double(note) - midiValue)
+            if distance < bestDistance {
+                bestDistance = distance
+                bestNote = note
+            }
+        }
+
+        let quantizedFrequency = 440.0 * pow(2.0, (Double(bestNote) - 69.0) / 12.0)
+        return Float(quantizedFrequency)
+    }
+}
+
 class Track: ObservableObject, Identifiable, Codable {
     let id: Int
     @Published var waveformType: WaveformType = .sine
@@ -40,6 +90,17 @@ class Track: ObservableObject, Identifiable, Codable {
     @Published var assignedInterval: String?  // Automatically assigned interval
     @Published var octaveOffset: Int = 0  // -2, -1, 0, +1, +2
     @Published var isHarmonyMaster: Bool = false
+    @Published var scaleType: ScaleType = .none {
+        didSet {
+            guard scaleType != oldValue else { return }
+            if scaleType != .none {
+                let quantized = scaleType.quantizeFrequency(frequency)
+                if abs(quantized - frequency) > 0.01 {
+                    frequency = quantized
+                }
+            }
+        }
+    }
 
     init(id: Int) {
         self.id = id
@@ -48,7 +109,7 @@ class Track: ObservableObject, Identifiable, Codable {
 
     enum CodingKeys: String, CodingKey {
         case id, waveformType, waveformData, frequency, volume, isPlaying, portamentoTime
-        case harmonyEnabled, assignedInterval, octaveOffset, isHarmonyMaster
+        case harmonyEnabled, assignedInterval, octaveOffset, isHarmonyMaster, scaleType
     }
 
     required init(from decoder: Decoder) throws {
@@ -64,6 +125,7 @@ class Track: ObservableObject, Identifiable, Codable {
         assignedInterval = try container.decodeIfPresent(String.self, forKey: .assignedInterval)
         octaveOffset = try container.decodeIfPresent(Int.self, forKey: .octaveOffset) ?? 0
         isHarmonyMaster = try container.decodeIfPresent(Bool.self, forKey: .isHarmonyMaster) ?? false
+        scaleType = try container.decodeIfPresent(ScaleType.self, forKey: .scaleType) ?? .none
     }
 
     func encode(to encoder: Encoder) throws {
@@ -79,6 +141,7 @@ class Track: ObservableObject, Identifiable, Codable {
         try container.encode(assignedInterval, forKey: .assignedInterval)
         try container.encode(octaveOffset, forKey: .octaveOffset)
         try container.encode(isHarmonyMaster, forKey: .isHarmonyMaster)
+        try container.encode(scaleType, forKey: .scaleType)
     }
 
     func generateDefaultWaveform() {

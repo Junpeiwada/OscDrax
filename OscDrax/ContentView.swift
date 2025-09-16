@@ -101,6 +101,7 @@ struct ContentView: View {
         target.harmonyEnabled = source.harmonyEnabled
         target.assignedInterval = source.assignedInterval
         target.octaveOffset = source.octaveOffset
+        target.scaleType = source.scaleType
         // Don't restore isPlaying state to avoid audio playing on launch
     }
 

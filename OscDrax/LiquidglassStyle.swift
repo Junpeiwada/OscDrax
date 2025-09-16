@@ -79,20 +79,6 @@ struct LiquidglassButtonStyle: ButtonStyle {
                                 endPoint: .bottomTrailing
                             )
                         )
-
-                    // Glass effect
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(stops: [
-                                    .init(color: Color.white.opacity(0.3), location: 0),
-                                    .init(color: Color.white.opacity(0.1), location: 0.5),
-                                    .init(color: Color.clear, location: 1)
-                                ]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
                 }
             )
             .overlay(
@@ -100,8 +86,8 @@ struct LiquidglassButtonStyle: ButtonStyle {
                     .stroke(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                Color.white.opacity(0.7),
-                                Color.white.opacity(0.3)
+                                Color.white.opacity(0.1),
+                                Color.white.opacity(0.2)
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing

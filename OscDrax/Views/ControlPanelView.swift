@@ -7,8 +7,13 @@ struct ControlPanelView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            FrequencyControlView(frequency: $track.frequency)
-            HarmonyControlView(track: track, globalChordType: $globalChordType, onChordTypeChanged: onChordTypeChanged)
+            FrequencyControlView(frequency: $track.frequency, scaleType: track.scaleType)
+            HarmonyControlView(
+                track: track,
+                scaleType: $track.scaleType,
+                globalChordType: $globalChordType,
+                onChordTypeChanged: onChordTypeChanged
+            )
             VolumeControlView(volume: $track.volume)
             PortamentoControlView(portamentoTime: $track.portamentoTime)
             PlayButtonView(isPlaying: $track.isPlaying)
@@ -18,6 +23,7 @@ struct ControlPanelView: View {
 
 struct FrequencyControlView: View {
     @Binding var frequency: Float
+    var scaleType: ScaleType
     private let minFreq: Float = 20
     private let maxFreq: Float = 20_000
 
@@ -31,7 +37,10 @@ struct FrequencyControlView: View {
             Slider(
                 value: Binding(
                     get: { logScale(frequency) },
-                    set: { frequency = expScale($0) }
+                    set: { newValue in
+                        let rawFrequency = expScale(newValue)
+                        frequency = scaleType.quantizeFrequency(rawFrequency)
+                    }
                 ),
                 in: 0...1
             )
@@ -106,6 +115,7 @@ struct PortamentoControlView: View {
 
 struct HarmonyControlView: View {
     @ObservedObject var track: Track
+    @Binding var scaleType: ScaleType
     @Binding var globalChordType: ChordType
     var onChordTypeChanged: () -> Void = {}
 
@@ -122,6 +132,16 @@ struct HarmonyControlView: View {
                     .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.9, green: 0.5, blue: 0.1)))
                     .labelsHidden()
                     .scaleEffect(0.8)
+
+                Picker("Scale", selection: $scaleType) {
+                    ForEach(ScaleType.allCases, id: \.self) { scale in
+                        Text(scale.displayName)
+                            .tag(scale)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: .infinity)
+                .layoutPriority(1)
 
                 // Interval Display next to toggle
                 Text(track.harmonyEnabled ? (track.assignedInterval ?? "--") : "--")
@@ -150,20 +170,16 @@ struct HarmonyControlView: View {
                             }, label: {
                                 Text(chord.rawValue)
                                     .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(globalChordType == chord ?
-                                        (track.harmonyEnabled ? .black : .gray) :
-                                        (track.harmonyEnabled ? .white : .gray))
+                                    .foregroundColor(chordForegroundColor(for: chord))
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
                                     .background(
                                         RoundedRectangle(cornerRadius: 6)
-                                            .fill(globalChordType == chord ?
-                                                  (track.harmonyEnabled ? Color(red: 0.9, green: 0.5, blue: 0.1) : Color.gray.opacity(0.3)) :
-                                                  Color.white.opacity(track.harmonyEnabled ? 0.1 : 0.05))
+                                            .fill(chordBackgroundColor(for: chord))
                                     )
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 6)
-                                            .stroke(Color.white.opacity(track.harmonyEnabled ? 0.2 : 0.1), lineWidth: 1)
+                                            .stroke(chordBorderColor, lineWidth: 1)
                                     )
                             })
                             .disabled(!track.harmonyEnabled)
@@ -189,20 +205,16 @@ struct HarmonyControlView: View {
                         }, label: {
                             Text(offset > 0 ? "+\(offset)" : "\(offset)")
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(track.octaveOffset == offset ?
-                                    (track.harmonyEnabled ? .black : .gray) :
-                                    (track.harmonyEnabled ? .white : .gray))
+                                .foregroundColor(octaveForegroundColor(for: offset))
                                 .frame(width: 28)
                                 .padding(.vertical, 4)
                                 .background(
                                     RoundedRectangle(cornerRadius: 6)
-                                        .fill(track.octaveOffset == offset ?
-                                              (track.harmonyEnabled ? Color(red: 0.9, green: 0.5, blue: 0.1) : Color.gray.opacity(0.3)) :
-                                              Color.white.opacity(track.harmonyEnabled ? 0.1 : 0.05))
+                                        .fill(octaveBackgroundColor(for: offset))
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 6)
-                                        .stroke(Color.white.opacity(track.harmonyEnabled ? 0.2 : 0.1), lineWidth: 1)
+                                        .stroke(chordBorderColor, lineWidth: 1)
                                 )
                         })
                         .disabled(!track.harmonyEnabled)
@@ -213,6 +225,38 @@ struct HarmonyControlView: View {
                 Spacer()
             }
         }
+    }
+}
+
+private extension HarmonyControlView {
+    var chordBorderColor: Color {
+        Color.white.opacity(track.harmonyEnabled ? 0.2 : 0.1)
+    }
+
+    func chordForegroundColor(for chord: ChordType) -> Color {
+        guard track.harmonyEnabled else { return .gray }
+        return globalChordType == chord ? .black : .white
+    }
+
+    func chordBackgroundColor(for chord: ChordType) -> Color {
+        let activeColor = Color(red: 0.9, green: 0.5, blue: 0.1)
+        guard track.harmonyEnabled else {
+            return Color.gray.opacity(globalChordType == chord ? 0.3 : 0.1)
+        }
+        return globalChordType == chord ? activeColor : Color.white.opacity(0.1)
+    }
+
+    func octaveForegroundColor(for offset: Int) -> Color {
+        guard track.harmonyEnabled else { return .gray }
+        return track.octaveOffset == offset ? .black : .white
+    }
+
+    func octaveBackgroundColor(for offset: Int) -> Color {
+        let activeColor = Color(red: 0.9, green: 0.5, blue: 0.1)
+        guard track.harmonyEnabled else {
+            return Color.gray.opacity(track.octaveOffset == offset ? 0.3 : 0.1)
+        }
+        return track.octaveOffset == offset ? activeColor : Color.white.opacity(0.1)
     }
 }
 

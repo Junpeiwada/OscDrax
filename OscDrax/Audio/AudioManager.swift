@@ -121,7 +121,7 @@ class AudioManager: ObservableObject {
                     chordType: chordType,
                     octaveOffset: track.octaveOffset
                 )
-                track.frequency = newFrequency
+                track.frequency = track.scaleType.quantizeFrequency(newFrequency)
             }
         }
     }
