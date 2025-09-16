@@ -48,6 +48,12 @@ class AudioManager: ObservableObject {
                 self?.audioEngine.updatePortamentoTime(trackId: track.id, time: time)
             }
             .store(in: &cancellables)
+
+        track.$vibratoEnabled
+            .sink { [weak self] enabled in
+                self?.audioEngine.updateVibratoEnabled(trackId: track.id, enabled: enabled)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Harmony Functions
@@ -94,15 +100,12 @@ class AudioManager: ObservableObject {
         }
     }
 
-    func calculateFrequencyForInterval(masterFrequency: Float, intervalName: String, chordType: ChordType, octaveOffset: Int) -> Float {
+    func calculateFrequencyForInterval(masterFrequency: Float, intervalName: String, chordType: ChordType) -> Float {
         let intervals = getChordIntervals(for: chordType)
 
         // Find the ratio for the given interval name
         let ratio = intervals.first(where: { $0.name == intervalName })?.ratio ?? 1.0
-
-        // Apply octave offset
-        let octaveMultiplier = pow(2.0, Float(octaveOffset))
-        return masterFrequency * ratio * octaveMultiplier
+        return masterFrequency * ratio
     }
 
     func updateHarmonyFrequencies(masterTrack: Track, allTracks: [Track], chordType: ChordType) {
@@ -118,8 +121,7 @@ class AudioManager: ObservableObject {
                 let newFrequency = calculateFrequencyForInterval(
                     masterFrequency: masterTrack.frequency,
                     intervalName: intervalName,
-                    chordType: chordType,
-                    octaveOffset: track.octaveOffset
+                    chordType: chordType
                 )
                 track.frequency = track.scaleType.quantizeFrequency(newFrequency)
             }

@@ -100,8 +100,8 @@ struct ContentView: View {
         target.portamentoTime = source.portamentoTime
         target.harmonyEnabled = source.harmonyEnabled
         target.assignedInterval = source.assignedInterval
-        target.octaveOffset = source.octaveOffset
         target.scaleType = source.scaleType
+        target.vibratoEnabled = source.vibratoEnabled
         // Don't restore isPlaying state to avoid audio playing on launch
     }
 

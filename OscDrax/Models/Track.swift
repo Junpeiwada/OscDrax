@@ -30,10 +30,10 @@ enum ChordType: String, CaseIterable, Codable {
 
 enum ScaleType: String, CaseIterable, Codable {
     case none = "None"
-    case western = "Western"
+    case major = "Major"
+    case majorPenta = "Major Penta"
+    case minorPenta = "Minor Penta"
     case japanese = "Japanese"
-    case ryukyu = "Ryukyu"
-    case wholeTone = "Whole Tone"
 
     var displayName: String { rawValue }
 
@@ -41,14 +41,14 @@ enum ScaleType: String, CaseIterable, Codable {
         switch self {
         case .none:
             return nil
-        case .western:
-            return Array(0..<12)
+        case .major:
+            return [0, 2, 4, 5, 7, 9, 11] // Major scale (C, D, E, F, G, A, B)
+        case .majorPenta:
+            return [0, 2, 4, 7, 9] // Major Pentatonic (C, D, E, G, A)
+        case .minorPenta:
+            return [0, 3, 5, 7, 10] // Minor Pentatonic (C, Eb, F, G, Bb)
         case .japanese:
-            return [0, 1, 5, 7, 10] // In scale (C, Db, F, G, Bb)
-        case .ryukyu:
-            return [0, 4, 5, 7, 11] // Ryukyu scale (C, E, F, G, B)
-        case .wholeTone:
-            return [0, 2, 4, 6, 8, 10]
+            return [0, 1, 5, 7, 10] // Japanese scale (C, Db, F, G, Bb)
         }
     }
 
@@ -88,8 +88,8 @@ class Track: ObservableObject, Identifiable, Codable {
     @Published var portamentoTime: Float = 0.0  // 0-1000ms range
     @Published var harmonyEnabled: Bool = true
     @Published var assignedInterval: String?  // Automatically assigned interval
-    @Published var octaveOffset: Int = 0  // -2, -1, 0, +1, +2
     @Published var isHarmonyMaster: Bool = false
+    @Published var vibratoEnabled: Bool = false  // Enable vibrato after 500ms of stable frequency
     @Published var scaleType: ScaleType = .none {
         didSet {
             guard scaleType != oldValue else { return }
@@ -109,7 +109,7 @@ class Track: ObservableObject, Identifiable, Codable {
 
     enum CodingKeys: String, CodingKey {
         case id, waveformType, waveformData, frequency, volume, isPlaying, portamentoTime
-        case harmonyEnabled, assignedInterval, octaveOffset, isHarmonyMaster, scaleType
+        case harmonyEnabled, assignedInterval, isHarmonyMaster, scaleType, vibratoEnabled
     }
 
     required init(from decoder: Decoder) throws {
@@ -123,9 +123,9 @@ class Track: ObservableObject, Identifiable, Codable {
         portamentoTime = try container.decode(Float.self, forKey: .portamentoTime)
         harmonyEnabled = try container.decodeIfPresent(Bool.self, forKey: .harmonyEnabled) ?? false
         assignedInterval = try container.decodeIfPresent(String.self, forKey: .assignedInterval)
-        octaveOffset = try container.decodeIfPresent(Int.self, forKey: .octaveOffset) ?? 0
         isHarmonyMaster = try container.decodeIfPresent(Bool.self, forKey: .isHarmonyMaster) ?? false
         scaleType = try container.decodeIfPresent(ScaleType.self, forKey: .scaleType) ?? .none
+        vibratoEnabled = try container.decodeIfPresent(Bool.self, forKey: .vibratoEnabled) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -139,9 +139,9 @@ class Track: ObservableObject, Identifiable, Codable {
         try container.encode(portamentoTime, forKey: .portamentoTime)
         try container.encode(harmonyEnabled, forKey: .harmonyEnabled)
         try container.encode(assignedInterval, forKey: .assignedInterval)
-        try container.encode(octaveOffset, forKey: .octaveOffset)
         try container.encode(isHarmonyMaster, forKey: .isHarmonyMaster)
         try container.encode(scaleType, forKey: .scaleType)
+        try container.encode(vibratoEnabled, forKey: .vibratoEnabled)
     }
 
     func generateDefaultWaveform() {

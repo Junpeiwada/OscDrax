@@ -58,7 +58,13 @@ struct TrackTabButton: View {
             .foregroundColor(isSelected ? .white : .gray)
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(LiquidglassButtonStyle())
+        .buttonStyle(LiquidglassButtonStyle(isPlaying: track.isPlaying))
+        .overlay(
+            isSelected ?
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(Color(red: 0.9, green: 0.5, blue: 0.1), lineWidth: 2)
+            : nil
+        )
     }
 
     private func volumeBar(_ volume: Float) -> String {

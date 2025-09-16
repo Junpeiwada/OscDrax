@@ -6,33 +6,31 @@ struct MiniWaveformView: View {
     @State private var animationPhase: Double = 0
 
     var body: some View {
-        GeometryReader { _ in
-            ZStack {
-                // Background waveform (static)
+        ZStack {
+            // Background waveform (static)
+            WaveformPath(data: downsampledData)
+                .stroke(
+                    LinearGradient(
+                        colors: [AppTheme.Colors.Waveform.miniBackground, AppTheme.Colors.Waveform.miniActive],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lineWidth: 1
+                )
+
+            // Animated waveform (only when playing)
+            if isPlaying {
                 WaveformPath(data: downsampledData)
                     .stroke(
                         LinearGradient(
-                            colors: [AppTheme.Colors.Waveform.miniBackground, AppTheme.Colors.Waveform.miniActive],
+                            colors: AppTheme.Colors.Waveform.gradient,
                             startPoint: .leading,
                             endPoint: .trailing
                         ),
-                        lineWidth: 1
+                        lineWidth: 1.5
                     )
-
-                // Animated waveform (only when playing)
-                if isPlaying {
-                    WaveformPath(data: downsampledData)
-                        .stroke(
-                            LinearGradient(
-                                colors: AppTheme.Colors.Waveform.gradient,
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            lineWidth: 1.5
-                        )
-                        .opacity(0.5 + sin(animationPhase) * 0.5) // Pulse effect
-                        .scaleEffect(1.0 + sin(animationPhase) * 0.05) // Subtle scale animation
-                }
+                    .opacity(0.5 + sin(animationPhase) * 0.5) // Pulse effect
+                    .scaleEffect(1.0 + sin(animationPhase) * 0.05) // Subtle scale animation
             }
         }
         .frame(height: 20)

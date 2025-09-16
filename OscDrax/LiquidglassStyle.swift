@@ -62,54 +62,7 @@ extension View {
 }
 
 struct LiquidglassButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(
-                ZStack {
-                    // Base layer
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: AppTheme.Colors.Button.normalBackgroundGradient.map { color in
-                                    color.opacity(configuration.isPressed ? 0.5 : 0.7)
-                                }),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 15)
-                    .stroke(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.white.opacity(0.1),
-                                Color.white.opacity(0.2)
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.5
-                    )
-            )
-            .shadow(color: Color.black.opacity(0.4),
-                    radius: configuration.isPressed ? 3 : 8,
-                    x: configuration.isPressed ? 2 : 5,
-                    y: configuration.isPressed ? 2 : 5)
-            .shadow(color: Color(white: 0.4, opacity: 0.3),
-                    radius: configuration.isPressed ? 3 : 8,
-                    x: configuration.isPressed ? -2 : -5,
-                    y: configuration.isPressed ? -2 : -5)
-            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
-    }
-}
-
-struct PlayStopButtonStyle: ButtonStyle {
-    let isStop: Bool
+    var isPlaying: Bool = false
     
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -117,30 +70,15 @@ struct PlayStopButtonStyle: ButtonStyle {
             .padding(.vertical, 10)
             .background(
                 ZStack {
-                    // Base layer - different colors for Play vs Stop
+                    // Base layer with top-to-bottom gradient
                     RoundedRectangle(cornerRadius: 15)
                         .fill(
                             LinearGradient(
-                                gradient: Gradient(colors: (isStop ?
-                                    AppTheme.Colors.Button.stopBackgroundGradient :
-                                    AppTheme.Colors.Button.playBackgroundGradient
-                                ).map { color in
+                                gradient: Gradient(colors: (isPlaying ? 
+                                    AppTheme.Colors.Button.normalHighlightBackgroundGradient :
+                                    AppTheme.Colors.Button.normalBackgroundGradient).map { color in
                                     color.opacity(configuration.isPressed ? 0.5 : 0.7)
                                 }),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-
-                    // Glass effect
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(stops: [
-                                    .init(color: Color.white.opacity(isStop ? 0.2 : 0.3), location: 0),
-                                    .init(color: Color.white.opacity(isStop ? 0.05 : 0.1), location: 0.5),
-                                    .init(color: Color.clear, location: 1)
-                                ]),
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
@@ -151,26 +89,24 @@ struct PlayStopButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: 15)
                     .stroke(
                         LinearGradient(
-                            gradient: Gradient(colors: isStop ?
-                                AppTheme.Colors.Button.stopBorder :
-                                AppTheme.Colors.Button.playBorder
-                            ),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                            gradient: Gradient(colors: [
+                                Color.white.opacity(0.2),
+                                Color.white.opacity(0.1)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
                         ),
                         lineWidth: 1.5
                     )
             )
-            .shadow(color: Color.black.opacity(0.4),
-                    radius: configuration.isPressed ? 3 : 8,
-                    x: configuration.isPressed ? 2 : 5,
-                    y: configuration.isPressed ? 2 : 5)
-            .shadow(color: isStop ?
-                    AppTheme.Colors.Button.stopShadow :
-                    AppTheme.Colors.Button.playShadow,
-                    radius: configuration.isPressed ? 3 : 8,
-                    x: configuration.isPressed ? -2 : -5,
-                    y: configuration.isPressed ? -2 : -5)
+            .shadow(color: Color.black.opacity(0.3),
+                    radius: configuration.isPressed ? 2 : 4,
+                    x: 0,
+                    y: configuration.isPressed ? 1 : 3)
+            .shadow(color: Color.white.opacity(0.1),
+                    radius: configuration.isPressed ? 1 : 2,
+                    x: 0,
+                    y: configuration.isPressed ? -1 : -2)
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }

@@ -26,6 +26,7 @@ struct ControlPanelView: View {
 struct FrequencyControlView: View {
     @Binding var frequency: Float
     @Binding var scaleType: ScaleType
+    @State private var showScalePicker = false
     private let minFreq: Float = 20
     private let maxFreq: Float = 20_000
 
@@ -37,7 +38,7 @@ struct FrequencyControlView: View {
                     .foregroundColor(.white.opacity(0.8))
                     .frame(width: 80, alignment: .leading)
 
-                Slider(
+                CustomFrequencySlider(
                     value: Binding(
                         get: { logScale(frequency) },
                         set: { newValue in
@@ -45,7 +46,10 @@ struct FrequencyControlView: View {
                             frequency = scaleType.quantizeFrequency(rawFrequency)
                         }
                     ),
-                    in: 0...1
+                    onChanged: { newValue in
+                        let rawFrequency = expScale(newValue)
+                        frequency = scaleType.quantizeFrequency(rawFrequency)
+                    }
                 )
                 .liquidglassSliderStyle()
 
@@ -55,23 +59,30 @@ struct FrequencyControlView: View {
                     .frame(width: 50, alignment: .trailing)
             }
             .frame(height: 30)
+            .padding(.bottom, 10)
 
             HStack(spacing: 12) {
                 Text("Scale")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
                     .frame(width: 80, alignment: .leading)
 
-                Picker("Scale", selection: $scaleType) {
-                    ForEach(ScaleType.allCases, id: \.self) { scale in
-                        Text(scale.displayName)
-                            .font(.system(size: 10, weight: .semibold))
-                            .lineLimit(2)
-                            .multilineTextAlignment(.center)
-                            .tag(scale)
-                    }
+                Button(action: {
+                    showScalePicker = true
+                }, label: {
+                    Text(scaleType.displayName)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                })
+                .buttonStyle(LiquidglassButtonStyle())
+                .popover(isPresented: $showScalePicker, attachmentAnchor: .point(.bottom), arrowEdge: .top) {
+                    ScalePickerView(scaleType: $scaleType, isPresented: $showScalePicker)
+                        .frame(width: 260, height: 300)
+                        .background(Color.clear)
+                        .presentationBackground(.regularMaterial.opacity(0))
+                        .presentationCompactAdaptation(.popover)
                 }
-                .pickerStyle(.segmented)
             }
         }
     }
@@ -142,37 +153,44 @@ struct HarmonyControlView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            // First row: Harmony Toggle + Position label
+            // First row: Harmony Toggle + Position label + Vibrato Toggle
             HStack(spacing: 12) {
                 Text("Harmony")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white.opacity(0.8))
-                    .frame(width: 60, alignment: .leading)
+                    .frame(width: 80, alignment: .leading)
 
                 Toggle("", isOn: $track.harmonyEnabled)
                     .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.9, green: 0.5, blue: 0.1)))
                     .labelsHidden()
                     .scaleEffect(0.8)
 
-                Spacer(minLength: 0)
-
-                Text("Position")
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundColor(.white.opacity(track.harmonyEnabled ? 0.6 : 0.3))
+                Spacer()
 
                 Text(track.harmonyEnabled ? (track.assignedInterval ?? "--") : "--")
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(track.harmonyEnabled ? Color(red: 0.9, green: 0.5, blue: 0.1) : .gray)
-                    .frame(width: 40)
+                    .frame(width: 50)
 
                 Spacer()
+
+                // Vibrato Toggle
+                Text("Vibrato")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(minWidth: 55)
+
+                Toggle("", isOn: $track.vibratoEnabled)
+                    .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.9, green: 0.5, blue: 0.1)))
+                    .labelsHidden()
+                    .scaleEffect(0.8)
             }
 
             // Second row: Chord Type Selector (compact)
             HStack(spacing: 8) {
                 Text("Chord")
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundColor(.white.opacity(track.harmonyEnabled ? 0.6 : 0.3))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(track.harmonyEnabled ? 0.8 : 0.3))
                     .frame(width: 60, alignment: .leading)
 
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -205,41 +223,6 @@ struct HarmonyControlView: View {
                 .opacity(track.harmonyEnabled ? 1.0 : 0.4)
             }
 
-            // Third row: Octave Selector (compact)
-            HStack(spacing: 8) {
-                Text("Octave")
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundColor(.white.opacity(track.harmonyEnabled ? 0.6 : 0.3))
-                    .frame(width: 60, alignment: .leading)
-
-                HStack(spacing: 4) {
-                    ForEach([-2, -1, 0, 1, 2], id: \.self) { offset in
-                        Button(action: {
-                            if track.harmonyEnabled {
-                                track.octaveOffset = offset
-                            }
-                        }, label: {
-                            Text(offset > 0 ? "+\(offset)" : "\(offset)")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(octaveForegroundColor(for: offset))
-                                .frame(width: 28)
-                                .padding(.vertical, 4)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .fill(octaveBackgroundColor(for: offset))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(chordBorderColor, lineWidth: 1)
-                                )
-                        })
-                        .disabled(!track.harmonyEnabled)
-                    }
-                }
-                .opacity(track.harmonyEnabled ? 1.0 : 0.4)
-
-                Spacer()
-            }
         }
     }
 }
@@ -262,18 +245,6 @@ private extension HarmonyControlView {
         return globalChordType == chord ? activeColor : Color.white.opacity(0.1)
     }
 
-    func octaveForegroundColor(for offset: Int) -> Color {
-        guard track.harmonyEnabled else { return .gray }
-        return track.octaveOffset == offset ? .black : .white
-    }
-
-    func octaveBackgroundColor(for offset: Int) -> Color {
-        let activeColor = Color(red: 0.9, green: 0.5, blue: 0.1)
-        guard track.harmonyEnabled else {
-            return Color.gray.opacity(track.octaveOffset == offset ? 0.3 : 0.1)
-        }
-        return track.octaveOffset == offset ? activeColor : Color.white.opacity(0.1)
-    }
 }
 
 struct PlayButtonView: View {
@@ -293,6 +264,6 @@ struct PlayButtonView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 5)
         })
-        .buttonStyle(PlayStopButtonStyle(isStop: isPlaying))
+        .buttonStyle(LiquidglassButtonStyle(isPlaying: isPlaying))
     }
 }

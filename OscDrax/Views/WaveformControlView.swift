@@ -18,12 +18,12 @@ struct WaveformControlView: View {
                 .foregroundColor(.white)
             })
             .buttonStyle(LiquidglassButtonStyle())
-            .sheet(isPresented: $showPresetPicker) {
+            .popover(isPresented: $showPresetPicker) {
                 PresetPickerView(track: track, isPresented: $showPresetPicker)
-                    .presentationDetents([.height(300)])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(30)
-                    .presentationBackground(.thinMaterial)
+                    .frame(width: 280, height: 300)
+                    .background(Color.clear)
+                    .presentationBackground(.regularMaterial.opacity(0))
+                    .presentationCompactAdaptation(.popover)
             }
 
             Spacer()
@@ -54,38 +54,21 @@ struct PresetPickerView: View {
             // Harmonized background gradient
             LinearGradient(
                 gradient: Gradient(colors: [
-                    Color(red: 0.08, green: 0.08, blue: 0.12).opacity(0.95),
-                    Color(red: 0.05, green: 0.05, blue: 0.08).opacity(0.98)
+                    Color(red: 0.08, green: 0.08, blue: 0.12),
+                    Color(red: 0.05, green: 0.05, blue: 0.08)
                 ]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            .overlay(
-                // Subtle noise texture
-                LinearGradient(
-                    gradient: Gradient(stops: [
-                        .init(color: Color.white.opacity(0.05), location: 0),
-                        .init(color: Color.clear, location: 0.3),
-                        .init(color: Color.white.opacity(0.02), location: 0.7),
-                        .init(color: Color.clear, location: 1)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+            .cornerRadius(12)
 
             VStack(spacing: 20) {
-                // Drag indicator
-                RoundedRectangle(cornerRadius: 2.5)
-                    .fill(Color.white.opacity(0.3))
-                    .frame(width: 40, height: 5)
-                    .padding(.top, 10)
-
                 Text("Select Waveform")
                     .font(.system(size: 20, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
                     .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+                    .padding(.top, 20)
 
                 VStack(spacing: 12) {
                     ForEach([WaveformType.sine, .triangle, .square], id: \.self) { type in
@@ -108,6 +91,67 @@ struct PresetPickerView: View {
                 Spacer()
             }
         }
+        .background(Color.clear)
+    }
+}
+
+struct ScalePickerView: View {
+    @Binding var scaleType: ScaleType
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.08, green: 0.08, blue: 0.12),
+                    Color(red: 0.05, green: 0.05, blue: 0.08)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            .cornerRadius(12)
+
+            VStack(spacing: 20) {
+                Text("Select Scale")
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+                    .padding(.top, 20)
+
+                VStack(spacing: 12) {
+                    ForEach(ScaleType.allCases, id: \.self) { scale in
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                scaleType = scale
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                isPresented = false
+                            }
+                        }, label: {
+                            HStack {
+                                Text(scale.displayName)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Spacer()
+                                if scaleType == scale {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(Color(red: 0.9, green: 0.5, blue: 0.1))
+                                        .font(.system(size: 18))
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                        })
+                        .buttonStyle(LiquidglassButtonStyle(isPlaying: scaleType == scale))
+                    }
+                }
+                .padding(.horizontal, 20)
+
+                Spacer()
+            }
+        }
+        .background(Color.clear)
     }
 }
 
@@ -121,30 +165,23 @@ struct WaveformButton: View {
             HStack {
                 Image(systemName: iconName)
                     .font(.system(size: 18))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.8))
+                    .foregroundColor(.white)
 
                 Text(type.displayName)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.8))
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(Color(red: 0.3, green: 0.8, blue: 0.5))
+                        .font(.system(size: 18))
+                        .foregroundColor(Color(red: 0.9, green: 0.5, blue: 0.1))
                 }
             }
-            .padding(.horizontal, 20)
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(LiquidglassButtonStyle())
-        .overlay(
-            isSelected ?
-            RoundedRectangle(cornerRadius: 15)
-                .stroke(Color(red: 0.3, green: 0.8, blue: 0.5).opacity(0.5), lineWidth: 2)
-            : nil
-        )
+        .buttonStyle(LiquidglassButtonStyle(isPlaying: isSelected))
     }
 
     private var iconName: String {

@@ -38,52 +38,16 @@ struct AppTheme {
 
         // MARK: - ボタン
         struct Button {
-            /// Playボタンの背景グラデーション（停止中・暗い緑）
-            /// #1A6633 (RGB:0.1,0.4,0.2) → H:0.375, S:0.75, B:0.4
-            /// #0D4D1A (RGB:0.05,0.3,0.1) → H:0.375, S:0.833, B:0.3
-            static let playBackgroundGradient = [
-                Color(UIColor(hue: 0.333, saturation: 0.75, brightness: 0.4, alpha: 1.0)),
-                Color(UIColor(hue: 0.333, saturation: 0.75, brightness: 0.3, alpha: 1.0))
-            ]
-
-            /// Stopボタンの背景グラデーション（再生中・明るい緑）
-            /// #1AB333 (RGB:0.1,0.7,0.2) → H:0.375, S:0.857, B:0.7
-            /// #0D991A (RGB:0.05,0.6,0.1) → H:0.375, S:0.917, B:0.6
-            static let stopBackgroundGradient = [
-                Color(UIColor(hue: 0.333, saturation: 0.857, brightness: 0.6, alpha: 1.0)),
-                Color(UIColor(hue: 0.333, saturation: 0.857, brightness: 0.7, alpha: 1.0))
-            ]
-
-            /// Playボタンのボーダー
-            static let playBorder = [
-                Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 0.5)),
-                Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 0.2))
-            ]
-
-            /// Stopボタンのボーダー
-            static let stopBorder = [
-                Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 0.7)),
-                Color(UIColor(hue: 0.333, saturation: 1.0, brightness: 0.5, alpha: 0.3))
-            ]
-
-            /// Playボタンの影
-            /// #004D0D (RGB:0.0,0.3,0.05) → H:0.388, S:1.0, B:0.3
-            static let playShadow = Color(UIColor(hue: 0.388, saturation: 1.0, brightness: 0.3, alpha: 0.3))
-
-            /// Stopボタンの影
-            /// #00801A (RGB:0.0,0.5,0.1) → H:0.367, S:1.0, B:0.5
-            static let stopShadow = Color(UIColor(hue: 0.367, saturation: 1.0, brightness: 0.5, alpha: 0.3))
-
             /// 通常ボタンの背景グラデーション
             static let normalBackgroundGradient = [
-                Color(UIColor(hue: 0.333, saturation: 0.357, brightness: 0.3, alpha: 1.0)),
-                Color(UIColor(hue: 0.333, saturation: 0.357, brightness: 0.4, alpha: 1.0))
+                Color(UIColor(hue: 0.383, saturation: 0.357, brightness: 0.4, alpha: 1.0)),
+                Color(UIColor(hue: 0.383, saturation: 0.357, brightness: 0.3, alpha: 1.0))
             ]
             
             /// 通常ボタンの発音状態背景グラデーション
             static let normalHighlightBackgroundGradient = [
-                Color(UIColor(hue: 0.333, saturation: 0.857, brightness: 0.6, alpha: 1.0)),
-                Color(UIColor(hue: 0.333, saturation: 0.857, brightness: 0.7, alpha: 1.0))
+                Color(UIColor(hue: 0.333, saturation: 0.857, brightness: 0.5, alpha: 1.0)),
+                Color(UIColor(hue: 0.333, saturation: 0.857, brightness: 0.4, alpha: 1.0))
             ]
         }
 
