@@ -7,10 +7,12 @@ struct ControlPanelView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            FrequencyControlView(frequency: $track.frequency, scaleType: track.scaleType)
+            FrequencyControlView(
+                frequency: $track.frequency,
+                scaleType: $track.scaleType
+            )
             HarmonyControlView(
                 track: track,
-                scaleType: $track.scaleType,
                 globalChordType: $globalChordType,
                 onChordTypeChanged: onChordTypeChanged
             )
@@ -23,35 +25,55 @@ struct ControlPanelView: View {
 
 struct FrequencyControlView: View {
     @Binding var frequency: Float
-    var scaleType: ScaleType
+    @Binding var scaleType: ScaleType
     private let minFreq: Float = 20
     private let maxFreq: Float = 20_000
 
     var body: some View {
-        HStack(spacing: 12) {
-            Text("Frequency")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.8))
-                .frame(width: 80, alignment: .leading)
+        VStack(spacing: 10) {
+            HStack(spacing: 12) {
+                Text("Frequency")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+                    .frame(width: 80, alignment: .leading)
 
-            Slider(
-                value: Binding(
-                    get: { logScale(frequency) },
-                    set: { newValue in
-                        let rawFrequency = expScale(newValue)
-                        frequency = scaleType.quantizeFrequency(rawFrequency)
+                Slider(
+                    value: Binding(
+                        get: { logScale(frequency) },
+                        set: { newValue in
+                            let rawFrequency = expScale(newValue)
+                            frequency = scaleType.quantizeFrequency(rawFrequency)
+                        }
+                    ),
+                    in: 0...1
+                )
+                .liquidglassSliderStyle()
+
+                Text("\(Int(frequency))")
+                    .font(.system(size: 12, weight: .regular, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.6))
+                    .frame(width: 50, alignment: .trailing)
+            }
+            .frame(height: 30)
+
+            HStack(spacing: 12) {
+                Text("Scale")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(width: 80, alignment: .leading)
+
+                Picker("Scale", selection: $scaleType) {
+                    ForEach(ScaleType.allCases, id: \.self) { scale in
+                        Text(scale.displayName)
+                            .font(.system(size: 10, weight: .semibold))
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                            .tag(scale)
                     }
-                ),
-                in: 0...1
-            )
-            .liquidglassSliderStyle()
-
-            Text("\(Int(frequency))")
-                .font(.system(size: 12, weight: .regular, design: .monospaced))
-                .foregroundColor(.white.opacity(0.6))
-                .frame(width: 50, alignment: .trailing)
+                }
+                .pickerStyle(.segmented)
+            }
         }
-        .frame(height: 30)
     }
 
     private func logScale(_ value: Float) -> Float {
@@ -115,13 +137,12 @@ struct PortamentoControlView: View {
 
 struct HarmonyControlView: View {
     @ObservedObject var track: Track
-    @Binding var scaleType: ScaleType
     @Binding var globalChordType: ChordType
     var onChordTypeChanged: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 12) {
-            // First row: Harmony Toggle + Interval Display
+            // First row: Harmony Toggle + Position label
             HStack(spacing: 12) {
                 Text("Harmony")
                     .font(.system(size: 12, weight: .medium))
@@ -133,17 +154,12 @@ struct HarmonyControlView: View {
                     .labelsHidden()
                     .scaleEffect(0.8)
 
-                Picker("Scale", selection: $scaleType) {
-                    ForEach(ScaleType.allCases, id: \.self) { scale in
-                        Text(scale.displayName)
-                            .tag(scale)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: .infinity)
-                .layoutPriority(1)
+                Spacer(minLength: 0)
 
-                // Interval Display next to toggle
+                Text("Position")
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundColor(.white.opacity(track.harmonyEnabled ? 0.6 : 0.3))
+
                 Text(track.harmonyEnabled ? (track.assignedInterval ?? "--") : "--")
                     .font(.system(size: 13, weight: .semibold, design: .monospaced))
                     .foregroundColor(track.harmonyEnabled ? Color(red: 0.9, green: 0.5, blue: 0.1) : .gray)
