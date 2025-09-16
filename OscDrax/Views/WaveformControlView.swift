@@ -21,8 +21,16 @@ struct WaveformControlView: View {
             .popover(isPresented: $showPresetPicker) {
                 PresetPickerView(track: track, isPresented: $showPresetPicker)
                     .frame(width: 280, height: 300)
-                    .background(Color.clear)
-                    .presentationBackground(.regularMaterial.opacity(0))
+                    .presentationBackground {
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 0.08, green: 0.08, blue: 0.12),
+                                Color(red: 0.05, green: 0.05, blue: 0.08)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    }
                     .presentationCompactAdaptation(.popover)
             }
 
@@ -50,48 +58,33 @@ struct PresetPickerView: View {
     @Binding var isPresented: Bool
 
     var body: some View {
-        ZStack {
-            // Harmonized background gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.08, green: 0.08, blue: 0.12),
-                    Color(red: 0.05, green: 0.05, blue: 0.08)
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            .cornerRadius(12)
+        VStack(spacing: 20) {
+            Text("Select Waveform")
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .foregroundColor(.white)
+                .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+                .padding(.top, 20)
 
-            VStack(spacing: 20) {
-                Text("Select Waveform")
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
-                    .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
-                    .padding(.top, 20)
-
-                VStack(spacing: 12) {
-                    ForEach([WaveformType.sine, .triangle, .square], id: \.self) { type in
-                        WaveformButton(
-                            type: type,
-                            isSelected: track.waveformType == type,
-                            action: {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    track.setWaveformType(type)
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    isPresented = false
-                                }
+            VStack(spacing: 12) {
+                ForEach([WaveformType.sine, .triangle, .square], id: \.self) { type in
+                    WaveformButton(
+                        type: type,
+                        isSelected: track.waveformType == type,
+                        action: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                track.setWaveformType(type)
                             }
-                        )
-                    }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                isPresented = false
+                            }
+                        }
+                    )
                 }
-                .padding(.horizontal, 30)
-
-                Spacer()
             }
+            .padding(.horizontal, 30)
+
+            Spacer()
         }
-        .background(Color.clear)
     }
 }
 

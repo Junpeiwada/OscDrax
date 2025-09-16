@@ -112,8 +112,11 @@ struct VolumeControlView: View {
                 .foregroundColor(.white.opacity(0.8))
                 .frame(width: 80, alignment: .leading)
 
-            Slider(value: $volume, in: 0...1)
-                .liquidglassSliderStyle()
+            CustomSlider(
+                value: $volume,
+                in: 0...1,
+                useLiquidGlassStyle: true
+            )
 
             Text("\(Int(volume * 100))%")
                 .font(.system(size: 12, weight: .regular, design: .monospaced))
@@ -134,8 +137,11 @@ struct PortamentoControlView: View {
                 .foregroundColor(.white.opacity(0.8))
                 .frame(width: 80, alignment: .leading)
 
-            Slider(value: $portamentoTime, in: 0...1_000)
-                .liquidglassSliderStyle()
+            CustomSlider(
+                value: $portamentoTime,
+                in: 0...1_000,
+                useLiquidGlassStyle: true
+            )
 
             Text("\(Int(portamentoTime))ms")
                 .font(.system(size: 12, weight: .regular, design: .monospaced))
