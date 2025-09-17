@@ -322,12 +322,13 @@ class OscillatorNode {
                     var interpolatedSample: Float = 0.0
 
                     if !waveformTable.isEmpty {
-                        let tableIndex = self.phase * Float(waveformTable.count)
-                        let index0 = Int(tableIndex) % waveformTable.count
-                        let index1 = (index0 + 1) % waveformTable.count
+                        let tableCount = waveformTable.count
+                        let tableIndex = self.phase * Float(tableCount)
+                        let index0 = Int(tableIndex) % tableCount
+                        let index1 = (index0 + 1) % tableCount
                         let fraction = tableIndex - Float(index0)
 
-                        if index0 < waveformTable.count && index1 < waveformTable.count {
+                        if index0 < tableCount && index1 < tableCount {
                             let sample0 = waveformTable[index0]
                             let sample1 = waveformTable[index1]
                             interpolatedSample = sample0 + (sample1 - sample0) * fraction
