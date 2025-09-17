@@ -15,7 +15,7 @@ struct ContentView: View {
     @StateObject private var track2 = Track(id: 2)
     @StateObject private var track3 = Track(id: 3)
     @StateObject private var track4 = Track(id: 4)
-    @StateObject private var audioManager = AudioManager.shared
+    @StateObject private var synthController = SynthUIAdapter.shared
     @State private var isUpdatingHarmony = false
     @State private var globalChordType: ChordType = .major
     @State private var showHelp = false
@@ -54,12 +54,12 @@ struct ContentView: View {
                 ControlPanelView(
                     track: currentTrack,
                     globalChordType: $globalChordType,
-                    formantType: $audioManager.formantType,
+                    formantType: $synthController.formantType,
                     showHelp: $showHelp,
                     currentHelpItem: $currentHelpItem,
                     onChordTypeChanged: updateHarmonyForChordChange,
                     onFormantChanged: {
-                        // Formant change is already handled via AudioManager's @Published property
+                        // フォルマント変更はSynthUIAdapter経由で伝播済み
                     }
                 )
 
@@ -84,15 +84,15 @@ struct ContentView: View {
             // Load saved state if exists
             loadSavedTracks()
 
-            audioManager.configureAudioSession()
+            synthController.configureAudioSession()
 
             // Setup audio for all tracks
-            audioManager.setupTrack(track1)
-            audioManager.setupTrack(track2)
-            audioManager.setupTrack(track3)
-            audioManager.setupTrack(track4)
+            synthController.setupTrack(track1)
+            synthController.setupTrack(track2)
+            synthController.setupTrack(track3)
+            synthController.setupTrack(track4)
 
-            audioManager.startEngineIfNeeded()
+            synthController.startEngineIfNeeded()
 
             // Setup frequency change observers for harmony
             setupHarmonyObservers()
@@ -100,16 +100,16 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             // Save tracks when app goes to background
             saveTracks()
-            audioManager.handleWillResignActive()
+            synthController.handleWillResignActive()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
-            audioManager.handleDidEnterBackground()
+            synthController.handleDidEnterBackground()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-            audioManager.handleWillEnterForeground()
+            synthController.handleWillEnterForeground()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            audioManager.handleDidBecomeActive()
+            synthController.handleDidBecomeActive()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
             // Save tracks when app terminates
@@ -156,7 +156,7 @@ struct ContentView: View {
             isUpdatingHarmony = true
 
             // Re-calculate all harmonies with new chord type
-            audioManager.updateHarmonyFrequencies(
+            synthController.updateHarmonyFrequencies(
                 leadTrack: leadTrack,
                 allTracks: allTracks,
                 chordType: globalChordType
@@ -184,7 +184,7 @@ struct ContentView: View {
                     track.isHarmonyLead = true
 
                     // Update harmony frequencies for other tracks
-                    self.audioManager.updateHarmonyFrequencies(
+                    self.synthController.updateHarmonyFrequencies(
                         leadTrack: track,
                         allTracks: allTracks,
                         chordType: self.globalChordType
@@ -192,7 +192,7 @@ struct ContentView: View {
 
                     self.isUpdatingHarmony = false
                 }
-                .store(in: &audioManager.cancellables)
+                .store(in: &synthController.cancellables)
 
             // Also observe harmony enabled state changes
             track.$harmonyEnabled
@@ -205,7 +205,7 @@ struct ContentView: View {
                         self.isUpdatingHarmony = true
 
                         // Re-assign intervals based on current harmony lead
-                        self.audioManager.updateHarmonyFrequencies(
+                        self.synthController.updateHarmonyFrequencies(
                             leadTrack: leadTrack,
                             allTracks: allTracks,
                             chordType: self.globalChordType
@@ -214,7 +214,7 @@ struct ContentView: View {
                         self.isUpdatingHarmony = false
                     }
                 }
-                .store(in: &audioManager.cancellables)
+                .store(in: &synthController.cancellables)
         }
     }
 }

@@ -1,28 +1,23 @@
-//
-//  FormantFilter.swift
-//  OscDrax
-//
-//  Multi-band formant filter for vowel and instrument simulation
-//
-
 import AVFoundation
 
+/// `AVAudioUnitEQ` を用いてフォルマント特性を付与するフィルタクラス。
 class FormantFilter {
     private let eqNode: AVAudioUnitEQ
     private var currentType: FormantType = .none
 
+    /// 指定のフォルマント数に対応した EQ を生成します。
     init() {
-        // Create EQ with enough bands for formants (typically 3-4 bands)
         self.eqNode = AVAudioUnitEQ(numberOfBands: 4)
 
-        // Initialize with bypass (no formant)
         setFormantType(.none)
     }
 
+    /// 内部で利用している EQ ノードを返します。
     var node: AVAudioNode {
         return eqNode
     }
 
+    /// フォルマント種別を即時適用します。
     func setFormantType(_ type: FormantType) {
         currentType = type
         if type == .none {
@@ -38,39 +33,36 @@ class FormantFilter {
         let qFactors = type.formantQFactors
         let gains = type.formantGains
 
-        // Configure each band
         for (index, band) in eqNode.bands.enumerated() {
             if index < frequencies.count {
-                // Configure as parametric EQ (bell curve)
                 band.filterType = .parametric
                 band.frequency = frequencies[index]
                 band.bandwidth = 1.0 / qFactors[index]  // Q to bandwidth conversion
                 band.gain = gains[index]
                 band.bypass = false
             } else {
-                // Bypass unused bands
                 band.bypass = true
             }
         }
 
-        // Set overall output gain to prevent clipping
         eqNode.globalGain = type.outputGain
     }
 
+    /// フォルマントを滑らかに遷移させます。
+    /// - Parameters:
+    ///   - type: 目標のフォルマント種別。
+    ///   - duration: 遷移にかける秒数。
     func smoothTransition(to type: FormantType, duration: Float = 0.1) {
-        // If transitioning to/from none, just switch immediately
         if type == .none || currentType == .none {
             setFormantType(type)
             return
         }
 
-        // Get current and target parameters
         let currentFreqs = currentType.formantFrequencies
         let targetFreqs = type.formantFrequencies
         let targetQs = type.formantQFactors
         let targetGains = type.formantGains
 
-        // Animate the transition
         let steps = 10
         let stepDuration = duration / Float(steps)
 

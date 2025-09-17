@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 import Combine
 
+/// `AVAudioEngine` を用いて実際の音声出力を行うクラス。
 class AudioEngine: ObservableObject {
     private let engine = AVAudioEngine()
     private let mixer = AVAudioMixerNode()
@@ -32,12 +33,16 @@ class AudioEngine: ObservableObject {
         startEngineIfNeeded()
     }
 
+    /// 推奨サンプルレート。
     var preferredSampleRate: Double { sampleRateValue }
 
+    /// 推奨 IO バッファ時間 (秒)。
     var preferredIOBufferDuration: TimeInterval { preferredBufferFrameCount / sampleRateValue }
 
+    /// エンジンが稼働中かどうか。
     var isRunning: Bool { engine.isRunning }
 
+    /// 必要に応じてエンジンを起動します。
     func startEngineIfNeeded() {
         guard !engine.isRunning else { return }
         do {
@@ -48,54 +53,69 @@ class AudioEngine: ObservableObject {
         }
     }
 
+    /// エンジンを停止します。
     func stopEngine() {
         if engine.isRunning {
             engine.stop()
         }
     }
 
-    func createOscillator(for track: Track) {
-        let oscillator = OscillatorNode(sampleRate: sampleRateValue, track: track)
-        oscillatorNodes[track.id] = oscillator
+    /// トラックパラメータを元にオシレータノードを生成します。
+    func createOscillator(with parameters: SynthTrackParameters) {
+        let oscillator = OscillatorNode(sampleRate: sampleRateValue, parameters: parameters)
+        oscillatorNodes[parameters.id] = oscillator
 
         engine.attach(oscillator.sourceNode)
 
         let format = AVAudioFormat(standardFormatWithSampleRate: sampleRateValue, channels: 1)
         engine.connect(oscillator.sourceNode, to: mixer, format: format)
+
+        if parameters.isPlaying {
+            oscillator.start()
+        }
     }
 
+    /// 指定 ID のオシレータを開始します。
     func startOscillator(trackId: Int) {
         oscillatorNodes[trackId]?.start()
     }
 
+    /// 指定 ID のオシレータを停止します。
     func stopOscillator(trackId: Int) {
         oscillatorNodes[trackId]?.stop()
     }
 
+    /// 周波数を更新します。
     func updateFrequency(trackId: Int, frequency: Float) {
         oscillatorNodes[trackId]?.frequency = frequency
     }
 
+    /// 音量を更新します。
     func updateVolume(trackId: Int, volume: Float) {
         oscillatorNodes[trackId]?.volume = volume
     }
 
+    /// 波形テーブルを更新します。
     func updateWaveform(trackId: Int, waveformData: [Float]) {
         oscillatorNodes[trackId]?.updateWaveformTable(waveformData)
     }
 
+    /// ポルタメント時間を更新します。
     func updatePortamentoTime(trackId: Int, time: Float) {
         oscillatorNodes[trackId]?.updatePortamentoTime(time)
     }
 
+    /// ビブラートの有効・無効を切り替えます。
     func updateVibratoEnabled(trackId: Int, enabled: Bool) {
         oscillatorNodes[trackId]?.vibratoEnabled = enabled
     }
 
+    /// 現在のフォルマントを即時適用します。
     func setFormantType(_ type: FormantType) {
         formantFilter.setFormantType(type)
     }
 
+    /// フォルマントを滑らかに遷移させます。
     func smoothFormantTransition(to type: FormantType) {
         formantFilter.smoothTransition(to: type)
     }
@@ -105,12 +125,14 @@ class AudioEngine: ObservableObject {
     }
 }
 
+/// 個々のトラック音声を生成するオシレータノード。
 class OscillatorNode {
     var sourceNode: AVAudioSourceNode!
     private let sampleRate: Double
     private var phase: Float = 0.0
     private var phaseIncrement: Float = 0.0
 
+    /// レンダリング時に共有する状態値。
     private struct RenderContext {
         let isPlaying: Bool
         let volume: Float
@@ -152,8 +174,6 @@ class OscillatorNode {
     private var _portamentoTime: Float = 0.0
     private var _vibratoEnabled = false
     
-    private weak var track: Track?
-    
     // Fade-in/out parameters
     private var fadeState: FadeState = .idle
     private var fadeProgress: Float = 0.0
@@ -179,6 +199,7 @@ class OscillatorNode {
     private var frequencyStableTime: Float = 0.0
     private let vibratoDelayTime: Float = 0.5  // 500ms delay before vibrato starts
     
+    /// 現在設定されている周波数。
     var frequency: Float {
         get {
             stateLock.lock()
@@ -205,6 +226,7 @@ class OscillatorNode {
         }
     }
     
+    /// 現在設定されている音量。
     var volume: Float {
         get {
             stateLock.lock()
@@ -218,6 +240,7 @@ class OscillatorNode {
         }
     }
     
+    /// ビブラートを適用するかどうか。
     var vibratoEnabled: Bool {
         get {
             stateLock.lock()
@@ -231,23 +254,24 @@ class OscillatorNode {
         }
     }
     
+    /// 演奏中かどうか。
     var isPlaying: Bool {
         stateLock.lock()
         defer { stateLock.unlock() }
         return _isPlaying
     }
     
-    init(sampleRate: Double, track: Track) {
+    /// 指定したトラックパラメータからノードを構築します。
+    init(sampleRate: Double, parameters: SynthTrackParameters) {
         self.sampleRate = sampleRate
-        self.track = track
-        self._frequency = track.frequency
-        self.currentFrequency = track.frequency
-        self._volume = track.volume
-        self.waveformBuffer.write(track.waveformData)
-        self._portamentoTime = track.portamentoTime / 1_000.0
-        
+        self._frequency = parameters.frequency
+        self.currentFrequency = parameters.frequency
+        self._volume = parameters.volume
+        self.waveformBuffer.write(parameters.waveformData)
+        self._portamentoTime = parameters.portamentoTime / 1_000.0
+
         // Initialize phase increment before creating source node
-        self.phaseIncrement = track.frequency / Float(sampleRate)
+        self.phaseIncrement = parameters.frequency / Float(sampleRate)
         
         // Create AVAudioSourceNode with proper format
         let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!

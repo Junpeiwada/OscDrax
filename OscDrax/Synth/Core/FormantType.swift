@@ -1,13 +1,8 @@
-//
-//  FormantType.swift
-//  OscDrax
-//
-//  Formant filter types for vowel simulation
-//
-
 import Foundation
 
-enum FormantType: String, CaseIterable, Codable {
+/// 母音シミュレーション用のフォルマント設定を表す列挙体。
+/// UI やオーディオエンジンから選択して利用します。
+public enum FormantType: String, CaseIterable, Codable {
     case none = "None"
     case vowelA = "A"
     case vowelI = "I"
@@ -15,10 +10,11 @@ enum FormantType: String, CaseIterable, Codable {
     case vowelE = "E"
     case vowelO = "O"
 
-    var displayName: String { rawValue }
+    /// UI 表示用の名称を返します。
+    public var displayName: String { rawValue }
 
-    // Formant frequencies in Hz
-    var formantFrequencies: [Float] {
+    /// フォルマント周波数 (Hz) を返します。
+    public var formantFrequencies: [Float] {
         switch self {
         case .none:
             return []
@@ -35,8 +31,8 @@ enum FormantType: String, CaseIterable, Codable {
         }
     }
 
-    // Q factors (bandwidth) for each formant
-    var formantQFactors: [Float] {
+    /// 各フォルマント帯域の Q 値を返します。
+    public var formantQFactors: [Float] {
         switch self {
         case .none:
             return []
@@ -45,8 +41,8 @@ enum FormantType: String, CaseIterable, Codable {
         }
     }
 
-    // Gain for each formant band (in dB)
-    var formantGains: [Float] {
+    /// 各フォルマント帯域のゲイン (dB) を返します。
+    public var formantGains: [Float] {
         switch self {
         case .none:
             return []
@@ -63,13 +59,13 @@ enum FormantType: String, CaseIterable, Codable {
         }
     }
 
-    // Overall mix level to prevent clipping
-    var outputGain: Float {
+    /// クリッピングを抑えるための出力ゲイン (dB) を返します。
+    public var outputGain: Float {
         switch self {
         case .none:
-            return 0.0  // No change when disabled
+            return 0.0
         case .vowelA, .vowelI, .vowelU, .vowelE, .vowelO:
-            return -3.0  // Slight reduction for vowels
+            return -3.0
         }
     }
 }
