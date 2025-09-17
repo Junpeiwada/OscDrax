@@ -52,3 +52,85 @@ UI 層は `SynthUIAdapter` にのみ依存します。`SynthEngineService` 以�
 - このモジュールは `AVAudioEngine` を利用するため、iOS/macOS でのみ動作します。
 - SwiftPM 化はしていませんが、フォルダ構成を保ったままコピーすれば動作します。
 - ハーモニー計算やトラックの状態同期は `Track` モデル側で `SynthTrackParameters` を生成する実装が必要です。
+
+## 提供される主なクラスと機能
+
+| クラス | 役割 | 主なメソッドやプロパティ |
+| --- | --- | --- |
+| `SynthUIAdapter` | UI 層と音声エンジンの橋渡し | `setupTrack(_:)`, `updateHarmonyFrequencies(...)`, `formantType`, ライフサイクルハンドラ各種 |
+| `SynthEngineService` | `SynthEngineProtocol` 実装。トラック管理とハーモニー計算を担当 | `registerTrack(_:)`, `updateTrack(_:)`, `setTrackIsPlaying(_:isPlaying:)` |
+| `SynthTrackParameters` | トラック状態を渡す DTO | `waveformType`, `frequency`, `volume`, `harmonyEnabled` など |
+| `AudioEngine` (Platform) | `AVAudioEngine` を直接操作するローレベル層 | `createOscillator(with:)`, `updateFrequency`, `updateWaveform` |
+| `FormantFilter` (Platform) | AVAudioUnitEQ を用いたフォルマントフィルタ | `setFormantType(_:)`, `smoothTransition(to:)` |
+
+## SwiftUI での利用サンプル
+
+```swift
+import SwiftUI
+
+struct SynthExampleView: View {
+    @StateObject private var track1 = Track(id: 1)
+    @StateObject private var track2 = Track(id: 2)
+    @StateObject private var synth = SynthUIAdapter.shared
+
+    var body: some View {
+        VStack {
+            Slider(value: Binding(get: {
+                Double(track1.frequency)
+            }, set: { newValue in
+                track1.frequency = Float(newValue)
+            }), in: 110...880)
+            .padding()
+
+            Button(track1.isPlaying ? "Stop" : "Play") {
+                track1.isPlaying.toggle()
+            }
+        }
+        .onAppear {
+            synth.configureAudioSession()
+            synth.setupTrack(track1)
+            synth.setupTrack(track2)
+            synth.startEngineIfNeeded()
+        }
+        .onDisappear {
+            synth.deactivateAudioSession()
+        }
+    }
+}
+```
+
+上記では `Track` モデルの `@Published` プロパティを更新すると、自動的に `SynthUIAdapter` 経由で `SynthEngineService` に伝搬されます。
+
+### ハーモニー更新の例
+
+```swift
+func updateHarmony() {
+    let tracks = [track1, track2, track3, track4]
+    if let lead = tracks.first(where: { $0.isHarmonyLead }) {
+        synth.updateHarmonyFrequencies(
+            leadTrack: lead,
+            allTracks: tracks,
+            chordType: .major
+        )
+    }
+}
+```
+
+### アプリライフサイクルへの組み込み例 (SwiftUI SceneDelegate 相当)
+
+```swift
+.onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+    synth.handleWillResignActive()
+}
+.onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+    synth.handleDidEnterBackground()
+}
+.onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+    synth.handleWillEnterForeground()
+}
+.onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+    synth.handleDidBecomeActive()
+}
+```
+
+これらを組み合わせることで、他プロジェクトでも OscDrax のシンセサイザ機能を簡単に再利用できます。

@@ -41,6 +41,17 @@ final class SynthEngineService: ObservableObject, SynthEngineProtocol {
     private init() {
         configureAudioSession()
         audioEngine.startEngineIfNeeded()
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioSessionInterruption(_:)),
+            name: AVAudioSession.interruptionNotification,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - Audio Session
@@ -278,5 +289,30 @@ final class SynthEngineService: ObservableObject, SynthEngineProtocol {
         let intervals = getChordIntervals(for: chordType)
         let ratio = intervals.first(where: { $0.interval == interval })?.ratio ?? 1.0
         return leadFrequency * ratio
+    }
+
+    /// AVAudioSession の割り込みを受け取った際の処理。
+    @objc
+    private func handleAudioSessionInterruption(_ notification: Notification) {
+        guard let info = notification.userInfo,
+              let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+
+        switch type {
+        case .began:
+            handleWillResignActive()
+
+        case .ended:
+            let optionsValue = info[AVAudioSessionInterruptionOptionKey] as? UInt
+            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue ?? 0)
+            let shouldResume = options.contains(.shouldResume) || optionsValue == nil
+
+            guard shouldResume else { return }
+
+            handleDidBecomeActive()
+
+        @unknown default:
+            break
+        }
     }
 }
