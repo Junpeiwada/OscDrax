@@ -18,6 +18,8 @@ struct ContentView: View {
     @StateObject private var audioManager = AudioManager.shared
     @State private var isUpdatingHarmony = false
     @State private var globalChordType: ChordType = .major
+    @State private var showHelp = false
+    @State private var currentHelpItem: HelpDescriptions.HelpItem?
 
     var currentTrack: Track {
         switch selectedTrack {
@@ -39,7 +41,11 @@ struct ContentView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                WaveformControlView(track: currentTrack)
+                WaveformControlView(
+                    track: currentTrack,
+                    showHelp: $showHelp,
+                    currentHelpItem: $currentHelpItem
+                )
                     .padding(.bottom, -10)
 
                 WaveformDisplayView(track: currentTrack)
@@ -49,6 +55,8 @@ struct ContentView: View {
                     track: currentTrack,
                     globalChordType: $globalChordType,
                     formantType: $audioManager.formantType,
+                    showHelp: $showHelp,
+                    currentHelpItem: $currentHelpItem,
                     onChordTypeChanged: updateHarmonyForChordChange,
                     onFormantChanged: {
                         // Formant change is already handled via AudioManager's @Published property
@@ -62,6 +70,15 @@ struct ContentView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
+
+            // Help overlay - covers entire screen
+            if showHelp, let helpItem = currentHelpItem {
+                HelpOverlayView(
+                    helpItem: helpItem,
+                    isPresented: $showHelp
+                )
+                .ignoresSafeArea()
+            }
         }
         .onAppear {
             // Load saved state if exists

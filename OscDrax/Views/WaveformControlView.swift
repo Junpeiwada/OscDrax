@@ -2,22 +2,24 @@ import SwiftUI
 
 struct WaveformControlView: View {
     @ObservedObject var track: Track
+    @Binding var showHelp: Bool
+    @Binding var currentHelpItem: HelpDescriptions.HelpItem?
     @State private var showPresetPicker = false
 
     var body: some View {
         HStack(spacing: 8) {
-            Button(action: {
-                showPresetPicker = true
-            }, label: {
-                HStack {
-                    Image(systemName: "waveform")
-                        .font(.system(size: 16))
-                    Text(track.waveformType.displayName)
-                        .font(.system(size: 14, weight: .medium))
-                }
-                .foregroundColor(.white)
-            })
-            .buttonStyle(LiquidglassButtonStyle())
+                Button(action: {
+                    showPresetPicker = true
+                }, label: {
+                    HStack {
+                        Image(systemName: "waveform")
+                            .font(.system(size: 16))
+                        Text(track.waveformType.displayName)
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .foregroundColor(.white)
+                })
+                .buttonStyle(LiquidglassButtonStyle())
             .popover(isPresented: $showPresetPicker) {
                 PresetPickerView(track: track, isPresented: $showPresetPicker)
                     .frame(width: 280, height: 300)
@@ -34,9 +36,9 @@ struct WaveformControlView: View {
                     .presentationCompactAdaptation(.popover)
             }
 
-            Spacer()
+                Spacer()
 
-            Button(action: {
+                Button(action: {
                 track.setWaveformType(.custom)
                 track.clearCustomWaveform()
             }, label: {
