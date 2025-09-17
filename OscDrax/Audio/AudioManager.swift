@@ -74,24 +74,24 @@ class AudioManager: ObservableObject {
 
     // MARK: - Harmony Functions
 
-    func getChordIntervals(for chordType: ChordType) -> [(name: String, ratio: Float)] {
+    func getChordIntervals(for chordType: ChordType) -> [(interval: HarmonyInterval, ratio: Float)] {
         switch chordType {
         case .major:
-            return [("Root", 1.0), ("3rd", 1.25), ("5th", 1.5), ("Oct", 2.0)]
+            return [(.root, 1.0), (.majorThird, 1.25), (.fifth, 1.5), (.octave, 2.0)]
         case .minor:
-            return [("Root", 1.0), ("m3", 1.2), ("5th", 1.5), ("Oct", 2.0)]
+            return [(.root, 1.0), (.minorThird, 1.2), (.fifth, 1.5), (.octave, 2.0)]
         case .seventh:
-            return [("Root", 1.0), ("3rd", 1.25), ("5th", 1.5), ("b7", 1.78)]
+            return [(.root, 1.0), (.majorThird, 1.25), (.fifth, 1.5), (.flatSeventh, 1.78)]
         case .minorSeventh:
-            return [("Root", 1.0), ("m3", 1.2), ("5th", 1.5), ("b7", 1.78)]
+            return [(.root, 1.0), (.minorThird, 1.2), (.fifth, 1.5), (.flatSeventh, 1.78)]
         case .majorSeventh:
-            return [("Root", 1.0), ("3rd", 1.25), ("5th", 1.5), ("7th", 1.875)]
+            return [(.root, 1.0), (.majorThird, 1.25), (.fifth, 1.5), (.seventh, 1.875)]
         case .sus4:
-            return [("Root", 1.0), ("4th", 1.333), ("5th", 1.5), ("Oct", 2.0)]
+            return [(.root, 1.0), (.fourth, 1.333), (.fifth, 1.5), (.octave, 2.0)]
         case .diminished:
-            return [("Root", 1.0), ("m3", 1.2), ("b5", 1.414), ("bb7", 1.68)]
+            return [(.root, 1.0), (.minorThird, 1.2), (.flatFifth, 1.414), (.doubleFlatSeventh, 1.68)]
         case .power:
-            return [("Root", 1.0), ("5th", 1.5), ("Oct", 2.0), ("2Oct", 4.0)]
+            return [(.root, 1.0), (.fifth, 1.5), (.octave, 2.0), (.doubleOctave, 4.0)]
         }
     }
 
@@ -99,7 +99,7 @@ class AudioManager: ObservableObject {
         let intervals = getChordIntervals(for: chordType)
 
         // Master track always gets the first interval (Root)
-        masterTrack.assignedInterval = intervals[0].name
+        masterTrack.assignedInterval = intervals[0].interval
 
         // Skip the first interval (Root) for other tracks
         let availableIntervals = Array(intervals.dropFirst())
@@ -107,20 +107,20 @@ class AudioManager: ObservableObject {
         // Assign remaining intervals to harmonized tracks
         for (index, track) in harmonizedTracks.enumerated() {
             if index < availableIntervals.count {
-                track.assignedInterval = availableIntervals[index].name
+                track.assignedInterval = availableIntervals[index].interval
             } else {
                 // If more tracks than available intervals, cycle through
                 let cycledIndex = index % availableIntervals.count
-                track.assignedInterval = availableIntervals[cycledIndex].name
+                track.assignedInterval = availableIntervals[cycledIndex].interval
             }
         }
     }
 
-    func calculateFrequencyForInterval(masterFrequency: Float, intervalName: String, chordType: ChordType) -> Float {
+    func calculateFrequencyForInterval(masterFrequency: Float, interval: HarmonyInterval, chordType: ChordType) -> Float {
         let intervals = getChordIntervals(for: chordType)
 
         // Find the ratio for the given interval name
-        let ratio = intervals.first(where: { $0.name == intervalName })?.ratio ?? 1.0
+        let ratio = intervals.first(where: { $0.interval == interval })?.ratio ?? 1.0
         return masterFrequency * ratio
     }
 
@@ -133,10 +133,10 @@ class AudioManager: ObservableObject {
 
         // Update frequencies based on assigned intervals
         for track in harmonizedTracks {
-            if let intervalName = track.assignedInterval {
+            if let interval = track.assignedInterval {
                 let newFrequency = calculateFrequencyForInterval(
                     masterFrequency: masterTrack.frequency,
-                    intervalName: intervalName,
+                    interval: interval,
                     chordType: chordType
                 )
                 track.frequency = track.scaleType.quantizeFrequency(newFrequency)

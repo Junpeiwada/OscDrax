@@ -3,14 +3,24 @@ import Foundation
 class PersistenceManager {
     static let shared = PersistenceManager()
     private let fileName = "oscdrax_state.json"
+    private let encoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        return encoder
+    }()
+    private let decoder = JSONDecoder()
 
-    private var documentsDirectory: URL {
-        FileManager.default.urls(for: .documentDirectory,
-                                  in: .userDomainMask).first!
+    private enum PersistenceError: Error {
+        case documentsDirectoryUnavailable
     }
 
-    private var fileURL: URL {
-        documentsDirectory.appendingPathComponent(fileName)
+    private var fileURL: URL? {
+        guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory,
+                                                                in: .userDomainMask).first else {
+            log("Documents directory is unavailable", error: PersistenceError.documentsDirectoryUnavailable)
+            return nil
+        }
+        return documentsDirectory.appendingPathComponent(fileName)
     }
 
     private init() {}
@@ -18,27 +28,23 @@ class PersistenceManager {
     // Save all tracks data
     func saveTracks(_ tracks: [Track]) {
         do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted
+            guard let fileURL = fileURL else { return }
             let data = try encoder.encode(tracks)
-            try data.write(to: fileURL)
-            // Silent operation - no logging needed
+            try data.write(to: fileURL, options: .atomic)
         } catch {
-            // Silent failure - could use os.log if needed
-            _ = error
+            log("Failed to save tracks", error: error)
         }
     }
 
     // Load tracks data
     func loadTracks() -> [Track]? {
         do {
+            guard let fileURL = fileURL else { return nil }
             let data = try Data(contentsOf: fileURL)
-            let decoder = JSONDecoder()
             let tracks = try decoder.decode([Track].self, from: data)
             return tracks
         } catch {
-            // Silent failure - could use os.log if needed
-            _ = error
+            log("Failed to load tracks", error: error)
             return nil
         }
     }
@@ -46,13 +52,22 @@ class PersistenceManager {
     // Delete saved data
     func clearSavedData() {
         do {
+            guard let fileURL = fileURL else { return }
             if FileManager.default.fileExists(atPath: fileURL.path) {
                 try FileManager.default.removeItem(at: fileURL)
-                // Silent operation - no logging needed
             }
         } catch {
-            // Silent failure - could use os.log if needed
-            _ = error
+            log("Failed to clear saved data", error: error)
         }
+    }
+
+    private func log(_ message: String, error: Error? = nil) {
+#if DEBUG
+        if let error {
+            print("[PersistenceManager] \(message): \(error)")
+        } else {
+            print("[PersistenceManager] \(message)")
+        }
+#endif
     }
 }

@@ -18,6 +18,38 @@ enum WaveformType: String, CaseIterable, Codable {
     }
 }
 
+extension WaveformType {
+    func defaultSamples(sampleCount: Int = Track.waveformSampleCount) -> [Float] {
+        guard sampleCount > 0 else { return [] }
+
+        switch self {
+        case .sine:
+            return (0..<sampleCount).map { index in
+                let angle = Float(index) / Float(sampleCount) * Float.pi * 2
+                return sin(angle)
+            }
+        case .triangle:
+            return (0..<sampleCount).map { index in
+                let phase = Float(index) / Float(sampleCount)
+                if phase < 0.25 {
+                    return phase * 4
+                } else if phase < 0.75 {
+                    return 2 - phase * 4
+                } else {
+                    return phase * 4 - 4
+                }
+            }
+        case .square:
+            let half = sampleCount / 2
+            return (0..<sampleCount).map { index in
+                index < half ? 1.0 : -1.0
+            }
+        case .custom:
+            return Array(repeating: 0, count: sampleCount)
+        }
+    }
+}
+
 enum ChordType: String, CaseIterable, Codable {
     case major = "Major"
     case minor = "Minor"
@@ -27,6 +59,38 @@ enum ChordType: String, CaseIterable, Codable {
     case sus4 = "Sus4"
     case diminished = "Dim"
     case power = "Power"
+}
+
+struct HarmonyInterval: RawRepresentable, Codable, Equatable {
+    let rawValue: String
+
+    init(rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        rawValue = try container.decode(String.self)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    var displayName: String { rawValue }
+
+    static let root = HarmonyInterval(rawValue: "Root")
+    static let majorThird = HarmonyInterval(rawValue: "3rd")
+    static let minorThird = HarmonyInterval(rawValue: "m3")
+    static let fourth = HarmonyInterval(rawValue: "4th")
+    static let fifth = HarmonyInterval(rawValue: "5th")
+    static let flatFifth = HarmonyInterval(rawValue: "b5")
+    static let flatSeventh = HarmonyInterval(rawValue: "b7")
+    static let doubleFlatSeventh = HarmonyInterval(rawValue: "bb7")
+    static let seventh = HarmonyInterval(rawValue: "7th")
+    static let octave = HarmonyInterval(rawValue: "Oct")
+    static let doubleOctave = HarmonyInterval(rawValue: "2Oct")
 }
 
 enum ScaleType: String, CaseIterable, Codable {
@@ -80,6 +144,8 @@ enum ScaleType: String, CaseIterable, Codable {
 }
 
 class Track: ObservableObject, Identifiable, Codable {
+    static let waveformSampleCount = 512
+
     let id: Int
     @Published var waveformType: WaveformType = .sine
     @Published var waveformData: [Float] = []
@@ -88,7 +154,7 @@ class Track: ObservableObject, Identifiable, Codable {
     @Published var isPlaying: Bool = false
     @Published var portamentoTime: Float = 0.0  // 0-1000ms range
     @Published var harmonyEnabled: Bool = true
-    @Published var assignedInterval: String?  // Automatically assigned interval
+    @Published var assignedInterval: HarmonyInterval?  // Automatically assigned interval
     @Published var isHarmonyMaster: Bool = false
     @Published var vibratoEnabled: Bool = false  // Enable vibrato after 500ms of stable frequency
     @Published var scaleType: ScaleType = .none {
@@ -123,7 +189,7 @@ class Track: ObservableObject, Identifiable, Codable {
         isPlaying = try container.decode(Bool.self, forKey: .isPlaying)
         portamentoTime = try container.decode(Float.self, forKey: .portamentoTime)
         harmonyEnabled = try container.decodeIfPresent(Bool.self, forKey: .harmonyEnabled) ?? false
-        assignedInterval = try container.decodeIfPresent(String.self, forKey: .assignedInterval)
+        assignedInterval = try container.decodeIfPresent(HarmonyInterval.self, forKey: .assignedInterval)
         isHarmonyMaster = try container.decodeIfPresent(Bool.self, forKey: .isHarmonyMaster) ?? false
         scaleType = try container.decodeIfPresent(ScaleType.self, forKey: .scaleType) ?? .none
         vibratoEnabled = try container.decodeIfPresent(Bool.self, forKey: .vibratoEnabled) ?? false
@@ -146,31 +212,7 @@ class Track: ObservableObject, Identifiable, Codable {
     }
 
     func generateDefaultWaveform() {
-        waveformData = Array(repeating: 0, count: 512)
-        switch waveformType {
-        case .sine:
-            for index in 0..<512 {
-                let angle = Float(index) / 512.0 * Float.pi * 2
-                waveformData[index] = sin(angle)
-            }
-        case .triangle:
-            for index in 0..<512 {
-                let phase = Float(index) / 512.0
-                if phase < 0.25 {
-                    waveformData[index] = phase * 4
-                } else if phase < 0.75 {
-                    waveformData[index] = 2 - phase * 4
-                } else {
-                    waveformData[index] = phase * 4 - 4
-                }
-            }
-        case .square:
-            for index in 0..<512 {
-                waveformData[index] = index < 256 ? 1.0 : -1.0
-            }
-        case .custom:
-            break
-        }
+        waveformData = waveformType.defaultSamples()
     }
 
     func setWaveformType(_ type: WaveformType) {
@@ -182,6 +224,6 @@ class Track: ObservableObject, Identifiable, Codable {
 
     func clearCustomWaveform() {
         // Generate a default flat line at center
-        waveformData = Array(repeating: 0, count: 512)
+        waveformData = Array(repeating: 0, count: Track.waveformSampleCount)
     }
 }

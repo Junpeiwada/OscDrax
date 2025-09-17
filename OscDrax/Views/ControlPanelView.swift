@@ -173,7 +173,7 @@ struct HarmonyControlView: View {
 
                 Spacer()
 
-                Text(track.harmonyEnabled ? (track.assignedInterval ?? "--") : "--")
+                Text(track.harmonyEnabled ? (track.assignedInterval?.displayName ?? "--") : "--")
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
                     .foregroundColor(track.harmonyEnabled ? Color(red: 0.9, green: 0.5, blue: 0.1) : .gray)
                     .frame(width: 50)

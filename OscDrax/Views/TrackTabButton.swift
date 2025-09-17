@@ -44,7 +44,7 @@ struct TrackTabButton: View {
                     .lineLimit(1)
 
                 // Position (Interval) display - Large
-                Text(track.harmonyEnabled ? (track.assignedInterval ?? "--") : "Free")
+                Text(track.harmonyEnabled ? (track.assignedInterval?.displayName ?? "--") : "Free")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(track.harmonyEnabled ?
                         Color(red: 0.9, green: 0.5, blue: 0.1) :
