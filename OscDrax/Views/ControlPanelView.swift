@@ -11,64 +11,31 @@ struct ControlPanelView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-                FrequencyControlView(
-                    frequency: $track.frequency,
-                    scaleType: $track.scaleType,
-                    showHelp: $showHelp,
-                    currentHelpItem: $currentHelpItem
-                )
-                HarmonyControlView(
-                    track: track,
-                    globalChordType: $globalChordType,
-                    onChordTypeChanged: onChordTypeChanged,
-                    showHelp: $showHelp,
-                    currentHelpItem: $currentHelpItem
-                )
-                VolumeControlView(
-                    volume: $track.volume,
-                    showHelp: $showHelp,
-                    currentHelpItem: $currentHelpItem
-                )
-                PortamentoControlView(
-                    portamentoTime: $track.portamentoTime,
-                    showHelp: $showHelp,
-                    currentHelpItem: $currentHelpItem
-                )
-
-                // Formant Type Selector - equally spaced across width
-                HStack(spacing: 8) {
-                    HelpButton(
-                        text: "Formant",
-                        helpItem: .formant,
-                        currentHelpItem: $currentHelpItem,
-                        showHelp: $showHelp
-                    )
-
-                HStack(spacing: 4) {
-                    ForEach(FormantType.allCases, id: \.self) { formant in
-                        Button(action: {
-                            formantType = formant
-                            onFormantChanged()
-                        }, label: {
-                            Text(formant.rawValue)
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(formantForegroundColor(for: formant))
-                                .frame(maxWidth: .infinity)  // Equal width distribution
-                                .padding(.vertical, 8)  // Doubled from 4 to 8
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .fill(formantBackgroundColor(for: formant))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                                )
-                        })
-                    }
-                    }
-                }
-
-                PlayButtonView(isPlaying: $track.isPlaying)
+            FrequencyControlView(
+                frequency: $track.frequency,
+                scaleType: $track.scaleType,
+                showHelp: $showHelp,
+                currentHelpItem: $currentHelpItem
+            )
+            HarmonyControlView(
+                track: track,
+                globalChordType: $globalChordType,
+                onChordTypeChanged: onChordTypeChanged,
+                showHelp: $showHelp,
+                currentHelpItem: $currentHelpItem
+            )
+            VolumeControlView(
+                volume: $track.volume,
+                showHelp: $showHelp,
+                currentHelpItem: $currentHelpItem
+            )
+            PortamentoControlView(
+                portamentoTime: $track.portamentoTime,
+                showHelp: $showHelp,
+                currentHelpItem: $currentHelpItem
+            )
+            formantSelector
+            PlayButtonView(isPlaying: $track.isPlaying)
         }
     }
 }
@@ -93,17 +60,17 @@ struct FrequencyControlView: View {
                 )
 
                 CustomFrequencySlider(
-                        value: Binding(
-                            get: { logScale(frequency) },
-                            set: { newValue in
-                                let rawFrequency = expScale(newValue)
-                                frequency = scaleType.quantizeFrequency(rawFrequency)
-                            }
-                        ),
-                        onChanged: { newValue in
+                    value: Binding(
+                        get: { logScale(frequency) },
+                        set: { newValue in
                             let rawFrequency = expScale(newValue)
                             frequency = scaleType.quantizeFrequency(rawFrequency)
                         }
+                    ),
+                    onChanged: { newValue in
+                        let rawFrequency = expScale(newValue)
+                        frequency = scaleType.quantizeFrequency(rawFrequency)
+                    }
                 )
                 .liquidglassSliderStyle()
 
@@ -295,12 +262,45 @@ struct HarmonyControlView: View {
                 }
                 .opacity(track.harmonyEnabled ? 1.0 : 0.4)
             }
-
         }
     }
 }
 
 private extension ControlPanelView {
+    var formantSelector: some View {
+        HStack(spacing: 8) {
+            HelpButton(
+                text: "Formant",
+                helpItem: .formant,
+                currentHelpItem: $currentHelpItem,
+                showHelp: $showHelp
+            )
+
+            HStack(spacing: 4) {
+                ForEach(FormantType.allCases, id: \.self) { formant in
+                    Button(action: {
+                        formantType = formant
+                        onFormantChanged()
+                    }, label: {
+                        Text(formant.rawValue)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(formantForegroundColor(for: formant))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(formantBackgroundColor(for: formant))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                            )
+                    })
+                }
+            }
+        }
+    }
+
     func formantForegroundColor(for formant: FormantType) -> Color {
         return formantType == formant ? .black : .white
     }
@@ -328,7 +328,6 @@ private extension HarmonyControlView {
         }
         return globalChordType == chord ? activeColor : Color.white.opacity(0.1)
     }
-
 }
 
 struct PlayButtonView: View {

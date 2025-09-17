@@ -97,8 +97,15 @@ class AudioManager: ObservableObject {
         audioEngine.createOscillator(for: track)
 
         // Observe track changes with appropriate debouncing
+        observePlaybackChanges(for: track)
+        observeFrequencyChanges(for: track)
+        observeVolumeChanges(for: track)
+        observeWaveformChanges(for: track)
+        observePortamentoChanges(for: track)
+        observeVibratoChanges(for: track)
+    }
 
-        // Immediate response for play/stop (no debounce)
+    private func observePlaybackChanges(for track: Track) {
         track.$isPlaying
             .removeDuplicates()
             .sink { [weak self] isPlaying in
@@ -109,8 +116,9 @@ class AudioManager: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+    }
 
-        // Debounced frequency updates (5ms for smooth slider response)
+    private func observeFrequencyChanges(for track: Track) {
         track.$frequency
             .removeDuplicates()
             .debounce(for: .milliseconds(5), scheduler: DispatchQueue.main)
@@ -118,8 +126,9 @@ class AudioManager: ObservableObject {
                 self?.audioEngine.updateFrequency(trackId: track.id, frequency: frequency)
             }
             .store(in: &cancellables)
+    }
 
-        // Debounced volume updates (5ms for smooth slider response)
+    private func observeVolumeChanges(for track: Track) {
         track.$volume
             .removeDuplicates()
             .debounce(for: .milliseconds(5), scheduler: DispatchQueue.main)
@@ -127,18 +136,19 @@ class AudioManager: ObservableObject {
                 self?.audioEngine.updateVolume(trackId: track.id, volume: volume)
             }
             .store(in: &cancellables)
+    }
 
-        // Slightly longer debounce for waveform data (10ms)
+    private func observeWaveformChanges(for track: Track) {
         track.$waveformData
             .debounce(for: .milliseconds(10), scheduler: DispatchQueue.main)
             .sink { [weak self] waveformData in
-                if !waveformData.isEmpty {
-                    self?.audioEngine.updateWaveform(trackId: track.id, waveformData: waveformData)
-                }
+                guard !waveformData.isEmpty else { return }
+                self?.audioEngine.updateWaveform(trackId: track.id, waveformData: waveformData)
             }
             .store(in: &cancellables)
+    }
 
-        // Debounced portamento time updates (10ms)
+    private func observePortamentoChanges(for track: Track) {
         track.$portamentoTime
             .removeDuplicates()
             .debounce(for: .milliseconds(10), scheduler: DispatchQueue.main)
@@ -146,8 +156,9 @@ class AudioManager: ObservableObject {
                 self?.audioEngine.updatePortamentoTime(trackId: track.id, time: time)
             }
             .store(in: &cancellables)
+    }
 
-        // Immediate response for vibrato toggle
+    private func observeVibratoChanges(for track: Track) {
         track.$vibratoEnabled
             .removeDuplicates()
             .sink { [weak self] enabled in
@@ -196,18 +207,18 @@ class AudioManager: ObservableObject {
             // Track 4: +20 cents
             return [
                 (HarmonyInterval(rawValue: "Root"), 1.0),
-                (HarmonyInterval(rawValue: "+10c"), pow(2.0, 10.0 / 1200.0)),
-                (HarmonyInterval(rawValue: "-10c"), pow(2.0, -10.0 / 1200.0)),
-                (HarmonyInterval(rawValue: "+20c"), pow(2.0, 20.0 / 1200.0))
+                (HarmonyInterval(rawValue: "+10c"), pow(2.0, 10.0 / 1_200.0)),
+                (HarmonyInterval(rawValue: "-10c"), pow(2.0, -10.0 / 1_200.0)),
+                (HarmonyInterval(rawValue: "+20c"), pow(2.0, 20.0 / 1_200.0))
             ]
         }
     }
 
-    func assignIntervalsToTracks(masterTrack: Track, harmonizedTracks: [Track], chordType: ChordType) {
+    func assignIntervalsToTracks(leadTrack: Track, harmonizedTracks: [Track], chordType: ChordType) {
         let intervals = getChordIntervals(for: chordType)
 
-        // Master track always gets the first interval (Root)
-        masterTrack.assignedInterval = intervals[0].interval
+        // Harmony lead track always gets the first interval (Root)
+        leadTrack.assignedInterval = intervals[0].interval
 
         // Skip the first interval (Root) for other tracks
         let availableIntervals = Array(intervals.dropFirst())
@@ -224,26 +235,26 @@ class AudioManager: ObservableObject {
         }
     }
 
-    func calculateFrequencyForInterval(masterFrequency: Float, interval: HarmonyInterval, chordType: ChordType) -> Float {
+    func calculateFrequencyForInterval(leadFrequency: Float, interval: HarmonyInterval, chordType: ChordType) -> Float {
         let intervals = getChordIntervals(for: chordType)
 
         // Find the ratio for the given interval name
         let ratio = intervals.first(where: { $0.interval == interval })?.ratio ?? 1.0
-        return masterFrequency * ratio
+        return leadFrequency * ratio
     }
 
-    func updateHarmonyFrequencies(masterTrack: Track, allTracks: [Track], chordType: ChordType) {
-        // Collect tracks with harmony enabled (excluding master)
-        let harmonizedTracks = allTracks.filter { $0.id != masterTrack.id && $0.harmonyEnabled }
+    func updateHarmonyFrequencies(leadTrack: Track, allTracks: [Track], chordType: ChordType) {
+        // Collect tracks with harmony enabled (excluding harmony lead)
+        let harmonizedTracks = allTracks.filter { $0.id != leadTrack.id && $0.harmonyEnabled }
 
         // Assign intervals to tracks
-        assignIntervalsToTracks(masterTrack: masterTrack, harmonizedTracks: harmonizedTracks, chordType: chordType)
+        assignIntervalsToTracks(leadTrack: leadTrack, harmonizedTracks: harmonizedTracks, chordType: chordType)
 
         // Update frequencies based on assigned intervals
         for track in harmonizedTracks {
             if let interval = track.assignedInterval {
                 let newFrequency = calculateFrequencyForInterval(
-                    masterFrequency: masterTrack.frequency,
+                    leadFrequency: leadTrack.frequency,
                     interval: interval,
                     chordType: chordType
                 )

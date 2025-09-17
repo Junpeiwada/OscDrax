@@ -110,6 +110,13 @@ class OscillatorNode {
     private let sampleRate: Double
     private var phase: Float = 0.0
     private var phaseIncrement: Float = 0.0
+
+    private struct RenderContext {
+        let isPlaying: Bool
+        let volume: Float
+        let targetFrequency: Float
+        let vibratoEnabled: Bool
+    }
     
     // Thread-safe waveform data with double buffering
     private class WaveformBuffer {
@@ -245,133 +252,164 @@ class OscillatorNode {
         // Create AVAudioSourceNode with proper format
         let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
         
-        self.sourceNode = AVAudioSourceNode(format: format) { [weak self] _, _, frameCount, audioBufferList -> OSStatus in
-            guard let self = self else { return noErr }
-            
-            let buffer = audioBufferList.pointee.mBuffers
-            guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else {
+        self.sourceNode = AVAudioSourceNode(
+            format: format,
+            renderBlock: { [weak self] _, _, frameCount, audioBufferList -> OSStatus in
+                guard let self = self else { return noErr }
+
+                let buffer = audioBufferList.pointee.mBuffers
+                guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else {
+                    return noErr
+                }
+
+                let context = self.currentRenderContext()
+                let waveformTable = self.waveformBuffer.read()
+                let totalFrames = Int(frameCount)
+                let fadeSamples = max(1, Int(self.fadeTime * Float(self.sampleRate)))
+
+                guard context.isPlaying, !waveformTable.isEmpty else {
+                    self.fillSilence(data, frameCount: totalFrames)
+                    return noErr
+                }
+
+                for frame in 0..<totalFrames {
+                    self.updateFade(totalSamples: fadeSamples)
+                    self.updateFrequencyTowardsTarget(context.targetFrequency)
+
+                    let actualFrequency = self.modulatedFrequency(
+                        baseFrequency: self.currentFrequency,
+                        vibratoOn: context.vibratoEnabled
+                    )
+
+                    self.phaseIncrement = actualFrequency / Float(self.sampleRate)
+                    let sample = self.interpolatedSample(from: waveformTable)
+                    data[frame] = self.processedSample(sample, volume: context.volume)
+                    self.advancePhase()
+                }
+
                 return noErr
             }
-            
-            // Get current values thread-safely
-            self.stateLock.lock()
-            let isCurrentlyPlaying = self._isPlaying
-            let currentVolume = self._volume
-            let targetFreq = self._frequency
-            let vibratoOn = self._vibratoEnabled
-            self.stateLock.unlock()
-            
-            let waveformTable = self.waveformBuffer.read()
-            
-            let fadeSamples = Int(self.fadeTime * Float(self.sampleRate))
-            
-            if isCurrentlyPlaying && !waveformTable.isEmpty {
-                for frame in 0..<Int(frameCount) {
-                    // Update fade state
-                    switch self.fadeState {
-                    case .fadingIn:
-                        self.fadeProgress += 1.0 / Float(fadeSamples)
-                        if self.fadeProgress >= 1.0 {
-                            self.fadeProgress = 1.0
-                            self.fadeState = .active
-                        }
-                        self.currentAmplitude = self.fadeProgress * self.fadeProgress  // Quadratic fade-in
-                        
-                    case .fadingOut:
-                        self.fadeProgress -= 1.0 / Float(fadeSamples)
-                        if self.fadeProgress <= 0.0 {
-                            self.fadeProgress = 0.0
-                            self.fadeState = .idle
-                            self.stateLock.lock()
-                            self._isPlaying = false
-                            self.stateLock.unlock()
-                            self.phase = 0.0  // Reset phase when fully stopped
-                        }
-                        self.currentAmplitude = self.fadeProgress * self.fadeProgress  // Quadratic fade-out
-                        
-                    case .active:
-                        self.currentAmplitude = 1.0
-                        
-                    case .idle:
-                        self.currentAmplitude = 0.0
-                    }
-                    
-                    // Update frequency with portamento
-                    if self.isPortamentoActive {
-                        let freqRatio = targetFreq / self.currentFrequency
-                        if abs(freqRatio - 1.0) < 0.001 {
-                            // Close enough to target
-                            self.currentFrequency = targetFreq
-                            self.isPortamentoActive = false
-                        } else {
-                            // Apply exponential portamento
-                            self.currentFrequency *= pow(2.0, self.portamentoRate)
-                        }
-                        // Reset vibrato timer during portamento
-                        self.frequencyStableTime = 0.0
-                    } else {
-                        // Update frequency stable time when not in portamento
-                        self.frequencyStableTime += 1.0 / Float(self.sampleRate)
-                    }
-                    
-                    // Calculate actual frequency with vibrato if enabled
-                    var actualFrequency = self.currentFrequency
-                    if vibratoOn && self.frequencyStableTime >= self.vibratoDelayTime && !self.isPortamentoActive {
-                        // Apply vibrato after 500ms of stable frequency
-                        let vibratoModulation = sin(self.vibratoPhase * 2.0 * Float.pi)
-                        actualFrequency = self.currentFrequency * (1.0 + vibratoModulation * self.vibratoDepth)
-                        
-                        // Update vibrato phase
-                        self.vibratoPhase += self.vibratoRate / Float(self.sampleRate)
-                        if self.vibratoPhase >= 1.0 {
-                            self.vibratoPhase -= 1.0
-                        }
-                    } else {
-                        // Reset vibrato phase when not active
-                        self.vibratoPhase = 0.0
-                    }
-                    
-                    // Update phase increment with actual frequency (including vibrato)
-                    self.phaseIncrement = actualFrequency / Float(self.sampleRate)
-                    
-                    // Linear interpolation for smooth waveform
-                    var interpolatedSample: Float = 0.0
-
-                    if !waveformTable.isEmpty {
-                        let tableCount = waveformTable.count
-                        let tableIndex = self.phase * Float(tableCount)
-                        let index0 = Int(tableIndex) % tableCount
-                        let index1 = (index0 + 1) % tableCount
-                        let fraction = tableIndex - Float(index0)
-
-                        if index0 < tableCount && index1 < tableCount {
-                            let sample0 = waveformTable[index0]
-                            let sample1 = waveformTable[index1]
-                            interpolatedSample = sample0 + (sample1 - sample0) * fraction
-                        }
-                    }
-                    
-                    // Apply volume and fade amplitude with soft clipping
-                    let rawSample = interpolatedSample * currentVolume * self.currentAmplitude
-                    data[frame] = tanh(rawSample * 0.7)  // Soft clipping
-                    
-                    // Update phase
-                    self.phase += self.phaseIncrement
-                    if self.phase >= 1.0 {
-                        self.phase -= 1.0
-                    }
-                }
-            } else {
-                // Fill with silence when not playing
-                for frame in 0..<Int(frameCount) {
-                    data[frame] = 0.0
-                }
-            }
-            
-            return noErr
-        }
+        )
     }
     
+    private func currentRenderContext() -> RenderContext {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return RenderContext(
+            isPlaying: _isPlaying,
+            volume: _volume,
+            targetFrequency: _frequency,
+            vibratoEnabled: _vibratoEnabled
+        )
+    }
+
+    private func updateFade(totalSamples: Int) {
+        guard totalSamples > 0 else {
+            currentAmplitude = fadeState == .fadingOut ? 0.0 : 1.0
+            return
+        }
+
+        let increment = 1.0 / Float(totalSamples)
+
+        switch fadeState {
+        case .fadingIn:
+            fadeProgress += increment
+            if fadeProgress >= 1.0 {
+                fadeProgress = 1.0
+                fadeState = .active
+            }
+            currentAmplitude = fadeProgress * fadeProgress
+
+        case .fadingOut:
+            fadeProgress -= increment
+            if fadeProgress <= 0.0 {
+                fadeProgress = 0.0
+                fadeState = .idle
+                stateLock.lock()
+                _isPlaying = false
+                stateLock.unlock()
+                phase = 0.0
+            }
+            currentAmplitude = fadeProgress * fadeProgress
+
+        case .active:
+            currentAmplitude = 1.0
+
+        case .idle:
+            currentAmplitude = 0.0
+        }
+    }
+
+    private func updateFrequencyTowardsTarget(_ targetFrequency: Float) {
+        if isPortamentoActive {
+            let freqRatio = targetFrequency / currentFrequency
+            if abs(freqRatio - 1.0) < 0.001 {
+                currentFrequency = targetFrequency
+                isPortamentoActive = false
+            } else {
+                currentFrequency *= pow(2.0, portamentoRate)
+            }
+            frequencyStableTime = 0.0
+        } else {
+            frequencyStableTime += 1.0 / Float(sampleRate)
+        }
+    }
+
+    private func modulatedFrequency(baseFrequency: Float, vibratoOn: Bool) -> Float {
+        guard vibratoOn,
+              frequencyStableTime >= vibratoDelayTime,
+              !isPortamentoActive else {
+            vibratoPhase = 0.0
+            return baseFrequency
+        }
+
+        let vibratoModulation = sin(vibratoPhase * 2.0 * Float.pi)
+        let modulatedFrequency = baseFrequency * (1.0 + vibratoModulation * vibratoDepth)
+
+        vibratoPhase += vibratoRate / Float(sampleRate)
+        if vibratoPhase >= 1.0 {
+            vibratoPhase -= 1.0
+        }
+
+        return modulatedFrequency
+    }
+
+    private func interpolatedSample(from waveformTable: [Float]) -> Float {
+        guard !waveformTable.isEmpty else { return 0.0 }
+
+        let tableCount = waveformTable.count
+        let tableIndex = phase * Float(tableCount)
+        let index0 = Int(tableIndex) % tableCount
+        let index1 = (index0 + 1) % tableCount
+        let fraction = tableIndex - Float(index0)
+
+        if index0 < tableCount && index1 < tableCount {
+            let sample0 = waveformTable[index0]
+            let sample1 = waveformTable[index1]
+            return sample0 + (sample1 - sample0) * fraction
+        }
+
+        return 0.0
+    }
+
+    private func processedSample(_ sample: Float, volume: Float) -> Float {
+        let rawSample = sample * volume * currentAmplitude
+        return tanh(rawSample * 0.7)
+    }
+
+    private func advancePhase() {
+        phase += phaseIncrement
+        if phase >= 1.0 {
+            phase -= 1.0
+        }
+    }
+
+    private func fillSilence(_ data: UnsafeMutablePointer<Float>, frameCount: Int) {
+        for frame in 0..<frameCount {
+            data[frame] = 0.0
+        }
+    }
+
     private func updatePhaseIncrement() {
         phaseIncrement = currentFrequency / Float(sampleRate)
     }

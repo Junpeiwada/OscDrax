@@ -151,13 +151,13 @@ struct ContentView: View {
 
         guard !isUpdatingHarmony else { return }
 
-        // Find current master track
-        if let masterTrack = allTracks.first(where: { $0.isHarmonyMaster }) {
+        // Find current harmony lead track
+        if let leadTrack = allTracks.first(where: { $0.isHarmonyLead }) {
             isUpdatingHarmony = true
 
             // Re-calculate all harmonies with new chord type
             audioManager.updateHarmonyFrequencies(
-                masterTrack: masterTrack,
+                leadTrack: leadTrack,
                 allTracks: allTracks,
                 chordType: globalChordType
             )
@@ -176,16 +176,16 @@ struct ContentView: View {
                 .sink { _ in
                     guard !self.isUpdatingHarmony else { return }
 
-                    // Set this track as the master and update others
+                    // Set this track as the harmony lead and update others
                     self.isUpdatingHarmony = true
 
-                    // Reset all master flags and set this track as master
-                    allTracks.forEach { $0.isHarmonyMaster = false }
-                    track.isHarmonyMaster = true
+                    // Reset all lead flags and set this track as the lead
+                    allTracks.forEach { $0.isHarmonyLead = false }
+                    track.isHarmonyLead = true
 
                     // Update harmony frequencies for other tracks
                     self.audioManager.updateHarmonyFrequencies(
-                        masterTrack: track,
+                        leadTrack: track,
                         allTracks: allTracks,
                         chordType: self.globalChordType
                     )
@@ -200,13 +200,13 @@ struct ContentView: View {
                 .sink { _ in
                     guard !self.isUpdatingHarmony else { return }
 
-                    // Find current master track
-                    if let masterTrack = allTracks.first(where: { $0.isHarmonyMaster }) {
+                    // Find current harmony lead track
+                    if let leadTrack = allTracks.first(where: { $0.isHarmonyLead }) {
                         self.isUpdatingHarmony = true
 
-                        // Re-assign intervals based on current master
+                        // Re-assign intervals based on current harmony lead
                         self.audioManager.updateHarmonyFrequencies(
-                            masterTrack: masterTrack,
+                            leadTrack: leadTrack,
                             allTracks: allTracks,
                             chordType: self.globalChordType
                         )

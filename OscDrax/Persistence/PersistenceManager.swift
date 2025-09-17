@@ -1,8 +1,13 @@
 import Foundation
+import OSLog
 
 class PersistenceManager {
     static let shared = PersistenceManager()
     private let fileName = "oscdrax_state.json"
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.oscdrax.app",
+        category: "PersistenceManager"
+    )
     private let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
@@ -62,12 +67,12 @@ class PersistenceManager {
     }
 
     private func log(_ message: String, error: Error? = nil) {
-#if DEBUG
+        guard _isDebugAssertConfiguration() else { return }
+
         if let error {
-            print("[PersistenceManager] \(message): \(error)")
+            logger.error("\(message, privacy: .public): \(String(describing: error), privacy: .public)")
         } else {
-            print("[PersistenceManager] \(message)")
+            logger.info("\(message, privacy: .public)")
         }
-#endif
     }
 }

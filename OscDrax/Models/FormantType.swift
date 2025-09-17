@@ -23,15 +23,15 @@ enum FormantType: String, CaseIterable, Codable {
         case .none:
             return []
         case .vowelA:
-            return [700, 1200, 2500]
+            return [700, 1_200, 2_500]
         case .vowelI:
-            return [300, 2300, 3200]
+            return [300, 2_300, 3_200]
         case .vowelU:
-            return [300, 700, 2500]
+            return [300, 700, 2_500]
         case .vowelE:
-            return [500, 1800, 2700]
+            return [500, 1_800, 2_700]
         case .vowelO:
-            return [500, 900, 2500]
+            return [500, 900, 2_500]
         }
     }
 

@@ -160,7 +160,7 @@ class Track: ObservableObject, Identifiable, Codable {
     @Published var portamentoTime: Float = 0.0  // 0-1000ms range
     @Published var harmonyEnabled: Bool = true
     @Published var assignedInterval: HarmonyInterval?  // Automatically assigned interval
-    @Published var isHarmonyMaster: Bool = false
+    @Published var isHarmonyLead: Bool = false
     @Published var vibratoEnabled: Bool = false  // Enable vibrato after 500ms of stable frequency
     @Published var scaleType: ScaleType = .none {
         didSet {
@@ -181,7 +181,8 @@ class Track: ObservableObject, Identifiable, Codable {
 
     enum CodingKeys: String, CodingKey {
         case id, waveformType, waveformData, frequency, volume, isPlaying, portamentoTime
-        case harmonyEnabled, assignedInterval, isHarmonyMaster, scaleType, vibratoEnabled
+        case harmonyEnabled, assignedInterval, isHarmonyLead, scaleType, vibratoEnabled
+        case legacyHarmonyFlag = "isHarmonyMaster"
     }
 
     required init(from decoder: Decoder) throws {
@@ -195,7 +196,9 @@ class Track: ObservableObject, Identifiable, Codable {
         portamentoTime = try container.decode(Float.self, forKey: .portamentoTime)
         harmonyEnabled = try container.decodeIfPresent(Bool.self, forKey: .harmonyEnabled) ?? false
         assignedInterval = try container.decodeIfPresent(HarmonyInterval.self, forKey: .assignedInterval)
-        isHarmonyMaster = try container.decodeIfPresent(Bool.self, forKey: .isHarmonyMaster) ?? false
+        isHarmonyLead = try container.decodeIfPresent(Bool.self, forKey: .isHarmonyLead)
+            ?? container.decodeIfPresent(Bool.self, forKey: .legacyHarmonyFlag)
+            ?? false
         scaleType = try container.decodeIfPresent(ScaleType.self, forKey: .scaleType) ?? .none
         vibratoEnabled = try container.decodeIfPresent(Bool.self, forKey: .vibratoEnabled) ?? false
     }
@@ -211,7 +214,7 @@ class Track: ObservableObject, Identifiable, Codable {
         try container.encode(portamentoTime, forKey: .portamentoTime)
         try container.encode(harmonyEnabled, forKey: .harmonyEnabled)
         try container.encode(assignedInterval, forKey: .assignedInterval)
-        try container.encode(isHarmonyMaster, forKey: .isHarmonyMaster)
+        try container.encode(isHarmonyLead, forKey: .isHarmonyLead)
         try container.encode(scaleType, forKey: .scaleType)
         try container.encode(vibratoEnabled, forKey: .vibratoEnabled)
     }
