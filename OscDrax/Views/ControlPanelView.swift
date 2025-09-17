@@ -3,7 +3,9 @@ import SwiftUI
 struct ControlPanelView: View {
     @ObservedObject var track: Track
     @Binding var globalChordType: ChordType
+    @Binding var formantType: FormantType
     var onChordTypeChanged: () -> Void = {}
+    var onFormantChanged: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 20) {
@@ -19,6 +21,37 @@ struct ControlPanelView: View {
             VolumeControlView(volume: $track.volume)
             PortamentoControlView(portamentoTime: $track.portamentoTime)
             PlayButtonView(isPlaying: $track.isPlaying)
+
+            // Formant Type Selector - equally spaced across width
+            HStack(spacing: 8) {
+                Text("Formant")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+                    .frame(width: 60, alignment: .leading)
+
+                HStack(spacing: 4) {
+                    ForEach(FormantType.allCases, id: \.self) { formant in
+                        Button(action: {
+                            formantType = formant
+                            onFormantChanged()
+                        }, label: {
+                            Text(formant.rawValue)
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(formantForegroundColor(for: formant))
+                                .frame(maxWidth: .infinity)  // Equal width distribution
+                                .padding(.vertical, 8)  // Doubled from 4 to 8
+                                .background(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(formantBackgroundColor(for: formant))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                )
+                        })
+                    }
+                }
+            }
         }
     }
 }
@@ -182,8 +215,8 @@ struct HarmonyControlView: View {
 
                 // Vibrato Toggle
                 Text("Vibrato")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
                     .frame(minWidth: 55)
 
                 Toggle("", isOn: $track.vibratoEnabled)
@@ -230,6 +263,17 @@ struct HarmonyControlView: View {
             }
 
         }
+    }
+}
+
+private extension ControlPanelView {
+    func formantForegroundColor(for formant: FormantType) -> Color {
+        return formantType == formant ? .black : .white
+    }
+
+    func formantBackgroundColor(for formant: FormantType) -> Color {
+        let activeColor = Color(red: 0.9, green: 0.5, blue: 0.1)
+        return formantType == formant ? activeColor : Color.white.opacity(0.1)
     }
 }
 

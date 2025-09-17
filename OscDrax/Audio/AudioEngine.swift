@@ -9,6 +9,7 @@ class AudioEngine: ObservableObject {
     private let sampleRateValue: Double = 44_100.0
     private let preferredBufferFrameCount: Double = 512.0
     private let mixerVolume: Float = 0.3  // Master volume to prevent clipping with 4 tracks
+    private let formantFilter = FormantFilter()
 
     init() {
         setupEngine()
@@ -16,10 +17,17 @@ class AudioEngine: ObservableObject {
 
     private func setupEngine() {
         engine.attach(mixer)
-        engine.connect(mixer, to: engine.mainMixerNode, format: nil)
+        engine.attach(formantFilter.node)
+
+        // Connect: mixer -> formantFilter -> mainMixerNode
+        engine.connect(mixer, to: formantFilter.node, format: nil)
+        engine.connect(formantFilter.node, to: engine.mainMixerNode, format: nil)
 
         // Set mixer volume to prevent clipping when multiple tracks play
         mixer.outputVolume = mixerVolume
+
+        // Initially set formant to none
+        formantFilter.setFormantType(.none)
 
         startEngineIfNeeded()
     }
@@ -82,6 +90,14 @@ class AudioEngine: ObservableObject {
 
     func updateVibratoEnabled(trackId: Int, enabled: Bool) {
         oscillatorNodes[trackId]?.vibratoEnabled = enabled
+    }
+
+    func setFormantType(_ type: FormantType) {
+        formantFilter.setFormantType(type)
+    }
+
+    func smoothFormantTransition(to type: FormantType) {
+        formantFilter.smoothTransition(to: type)
     }
 
     deinit {

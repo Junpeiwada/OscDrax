@@ -66,7 +66,7 @@ struct PresetPickerView: View {
                 .padding(.top, 20)
 
             VStack(spacing: 12) {
-                ForEach([WaveformType.sine, .triangle, .square], id: \.self) { type in
+                ForEach([WaveformType.sine, .triangle, .square, .sawtooth], id: \.self) { type in
                     WaveformButton(
                         type: type,
                         isSelected: track.waveformType == type,
@@ -182,6 +182,7 @@ struct WaveformButton: View {
         case .sine: return "waveform.path"
         case .triangle: return "triangle"
         case .square: return "square"
+        case .sawtooth: return "waveform"
         case .custom: return "scribble"
         }
     }

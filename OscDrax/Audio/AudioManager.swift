@@ -6,6 +6,13 @@ class AudioManager: ObservableObject {
     static let shared = AudioManager()
     private let audioEngine = AudioEngine()
     var cancellables = Set<AnyCancellable>()
+
+    // Global formant filter state
+    @Published var formantType: FormantType = .none {
+        didSet {
+            audioEngine.smoothFormantTransition(to: formantType)
+        }
+    }
     
     enum SilentModePolicy {
         case ignoresMuteSwitch
@@ -179,14 +186,20 @@ class AudioManager: ObservableObject {
             return [(.root, 1.0), (.majorThird, 1.25), (.fifth, 1.5), (.flatSeventh, 1.78)]
         case .minorSeventh:
             return [(.root, 1.0), (.minorThird, 1.2), (.fifth, 1.5), (.flatSeventh, 1.78)]
-        case .majorSeventh:
-            return [(.root, 1.0), (.majorThird, 1.25), (.fifth, 1.5), (.seventh, 1.875)]
-        case .sus4:
-            return [(.root, 1.0), (.fourth, 1.333), (.fifth, 1.5), (.octave, 2.0)]
-        case .diminished:
-            return [(.root, 1.0), (.minorThird, 1.2), (.flatFifth, 1.414), (.doubleFlatSeventh, 1.68)]
         case .power:
             return [(.root, 1.0), (.fifth, 1.5), (.octave, 2.0), (.doubleOctave, 4.0)]
+        case .detune:
+            // Detune: slight frequency variations for thickness
+            // Track 1: unison (0 cents)
+            // Track 2: +10 cents
+            // Track 3: -10 cents
+            // Track 4: +20 cents
+            return [
+                (HarmonyInterval(rawValue: "Root"), 1.0),
+                (HarmonyInterval(rawValue: "+10c"), pow(2.0, 10.0 / 1200.0)),
+                (HarmonyInterval(rawValue: "-10c"), pow(2.0, -10.0 / 1200.0)),
+                (HarmonyInterval(rawValue: "+20c"), pow(2.0, 20.0 / 1200.0))
+            ]
         }
     }
 

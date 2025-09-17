@@ -6,6 +6,7 @@ enum WaveformType: String, CaseIterable, Codable {
     case sine
     case triangle
     case square
+    case sawtooth
     case custom
 
     var displayName: String {
@@ -13,6 +14,7 @@ enum WaveformType: String, CaseIterable, Codable {
         case .sine: return "Sin"
         case .triangle: return "Triangle"
         case .square: return "Square"
+        case .sawtooth: return "Saw"
         case .custom: return "Custom"
         }
     }
@@ -44,6 +46,11 @@ extension WaveformType {
             return (0..<sampleCount).map { index in
                 index < half ? 1.0 : -1.0
             }
+        case .sawtooth:
+            return (0..<sampleCount).map { index in
+                let phase = Float(index) / Float(sampleCount)
+                return 2.0 * phase - 1.0  // Linear rise from -1 to 1
+            }
         case .custom:
             return Array(repeating: 0, count: sampleCount)
         }
@@ -55,10 +62,8 @@ enum ChordType: String, CaseIterable, Codable {
     case minor = "Minor"
     case seventh = "7th"
     case minorSeventh = "m7"
-    case majorSeventh = "Maj7"
-    case sus4 = "Sus4"
-    case diminished = "Dim"
     case power = "Power"
+    case detune = "Detune"
 }
 
 struct HarmonyInterval: RawRepresentable, Codable, Equatable {

@@ -45,7 +45,15 @@ struct ContentView: View {
                 WaveformDisplayView(track: currentTrack)
                     .frame(height: 200)
 
-                ControlPanelView(track: currentTrack, globalChordType: $globalChordType, onChordTypeChanged: updateHarmonyForChordChange)
+                ControlPanelView(
+                    track: currentTrack,
+                    globalChordType: $globalChordType,
+                    formantType: $audioManager.formantType,
+                    onChordTypeChanged: updateHarmonyForChordChange,
+                    onFormantChanged: {
+                        // Formant change is already handled via AudioManager's @Published property
+                    }
+                )
 
                 Spacer()
 
