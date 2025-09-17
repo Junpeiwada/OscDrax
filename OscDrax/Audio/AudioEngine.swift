@@ -6,25 +6,12 @@ class AudioEngine: ObservableObject {
     private let engine = AVAudioEngine()
     private let mixer = AVAudioMixerNode()
     private var oscillatorNodes: [Int: OscillatorNode] = [:]
-    private let sampleRate: Double = 44_100.0
+    private let sampleRateValue: Double = 44_100.0
+    private let preferredBufferFrameCount: Double = 512.0
     private let mixerVolume: Float = 0.3  // Master volume to prevent clipping with 4 tracks
 
     init() {
         setupEngine()
-        setupAudioSession()
-    }
-
-    private func setupAudioSession() {
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default, options: [])
-            try session.setActive(true)
-            try session.setPreferredSampleRate(sampleRate)
-            try session.setPreferredIOBufferDuration(512.0 / sampleRate) // ~11.6ms latency
-        } catch {
-            // Silent failure - audio session setup error
-            _ = error
-        }
     }
 
     private func setupEngine() {
@@ -34,6 +21,17 @@ class AudioEngine: ObservableObject {
         // Set mixer volume to prevent clipping when multiple tracks play
         mixer.outputVolume = mixerVolume
 
+        startEngineIfNeeded()
+    }
+
+    var preferredSampleRate: Double { sampleRateValue }
+
+    var preferredIOBufferDuration: TimeInterval { preferredBufferFrameCount / sampleRateValue }
+
+    var isRunning: Bool { engine.isRunning }
+
+    func startEngineIfNeeded() {
+        guard !engine.isRunning else { return }
         do {
             try engine.start()
         } catch {
@@ -42,13 +40,19 @@ class AudioEngine: ObservableObject {
         }
     }
 
+    func stopEngine() {
+        if engine.isRunning {
+            engine.stop()
+        }
+    }
+
     func createOscillator(for track: Track) {
-        let oscillator = OscillatorNode(sampleRate: sampleRate, track: track)
+        let oscillator = OscillatorNode(sampleRate: sampleRateValue, track: track)
         oscillatorNodes[track.id] = oscillator
 
         engine.attach(oscillator.sourceNode)
 
-        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)
+        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRateValue, channels: 1)
         engine.connect(oscillator.sourceNode, to: mixer, format: format)
     }
 

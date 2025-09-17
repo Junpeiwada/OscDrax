@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import UIKit
 
 struct ContentView: View {
     @State private var selectedTrack = 1
@@ -58,11 +59,15 @@ struct ContentView: View {
             // Load saved state if exists
             loadSavedTracks()
 
+            audioManager.configureAudioSession()
+
             // Setup audio for all tracks
             audioManager.setupTrack(track1)
             audioManager.setupTrack(track2)
             audioManager.setupTrack(track3)
             audioManager.setupTrack(track4)
+
+            audioManager.startEngineIfNeeded()
 
             // Setup frequency change observers for harmony
             setupHarmonyObservers()
@@ -70,6 +75,16 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             // Save tracks when app goes to background
             saveTracks()
+            audioManager.handleWillResignActive()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+            audioManager.handleDidEnterBackground()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            audioManager.handleWillEnterForeground()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            audioManager.handleDidBecomeActive()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
             // Save tracks when app terminates

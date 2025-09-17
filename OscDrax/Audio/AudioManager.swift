@@ -1,14 +1,91 @@
 import Foundation
 import Combine
+import AVFoundation
 
 class AudioManager: ObservableObject {
     static let shared = AudioManager()
     private let audioEngine = AudioEngine()
     var cancellables = Set<AnyCancellable>()
+    
+    enum SilentModePolicy {
+        case ignoresMuteSwitch
+        case respectsMuteSwitch
+    }
 
-    private init() {}
+    /// `.respectsMuteSwitch` に切り替えるとハードウェアのサイレントスイッチに従います（Next Step 2）。
+    var silentModePolicy: SilentModePolicy = .ignoresMuteSwitch {
+        didSet {
+            configureAudioSession()
+        }
+    }
+
+    private var trackedTracks: [Int: Track] = [:]
+    private var suspendedTrackIDs: Set<Int> = []
+
+    private init() {
+        configureAudioSession()
+        audioEngine.startEngineIfNeeded()
+    }
+
+    func configureAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+
+        let category: AVAudioSession.Category = {
+            switch silentModePolicy {
+            case .ignoresMuteSwitch:
+                return .playback
+            case .respectsMuteSwitch:
+                return .ambient
+            }
+        }()
+
+        do {
+            try session.setCategory(category, mode: .default, options: [])
+            try session.setPreferredSampleRate(audioEngine.preferredSampleRate)
+            try session.setPreferredIOBufferDuration(audioEngine.preferredIOBufferDuration)
+            try session.setActive(true)
+        } catch {
+            // Silent failure - session configuration error
+            _ = error
+        }
+    }
+
+    func deactivateAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        } catch {
+            // Silent failure - session deactivation error
+            _ = error
+        }
+    }
+
+    func handleWillResignActive() {
+        suspendedTrackIDs = stopActiveTracks()
+        audioEngine.stopEngine()
+    }
+
+    func handleDidEnterBackground() {
+        deactivateAudioSession()
+    }
+
+    func handleWillEnterForeground() {
+        configureAudioSession()
+    }
+
+    func handleDidBecomeActive() {
+        configureAudioSession()
+        audioEngine.startEngineIfNeeded()
+        resumeSuspendedTracks()
+    }
+
+    func startEngineIfNeeded() {
+        audioEngine.startEngineIfNeeded()
+    }
 
     func setupTrack(_ track: Track) {
+        guard trackedTracks[track.id] == nil else { return }
+        trackedTracks[track.id] = track
+
         // Create oscillator for the track
         audioEngine.createOscillator(for: track)
 
@@ -70,6 +147,24 @@ class AudioManager: ObservableObject {
                 self?.audioEngine.updateVibratoEnabled(trackId: track.id, enabled: enabled)
             }
             .store(in: &cancellables)
+    }
+
+    private func stopActiveTracks() -> Set<Int> {
+        var activeTrackIDs: Set<Int> = []
+        for (id, track) in trackedTracks where track.isPlaying {
+            activeTrackIDs.insert(id)
+            audioEngine.stopOscillator(trackId: id)
+        }
+        return activeTrackIDs
+    }
+
+    private func resumeSuspendedTracks() {
+        guard !suspendedTrackIDs.isEmpty else { return }
+        for id in suspendedTrackIDs {
+            guard let track = trackedTracks[id], track.isPlaying else { continue }
+            audioEngine.startOscillator(trackId: id)
+        }
+        suspendedTrackIDs.removeAll()
     }
 
     // MARK: - Harmony Functions
