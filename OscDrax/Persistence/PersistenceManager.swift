@@ -67,7 +67,9 @@ class PersistenceManager {
     }
 
     private func log(_ message: String, error: Error? = nil) {
-        guard _isDebugAssertConfiguration() else { return }
+        #if !DEBUG
+        return
+        #endif
 
         if let error {
             logger.error("\(message, privacy: .public): \(String(describing: error), privacy: .public)")

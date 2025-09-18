@@ -1,69 +1,21 @@
-# Synth モジュールの概要と利用方法
+# Synth モジュール — ライブラリ利用ガイド
 
-このフォルダには OscDrax の音声合成機能を他プロジェクトでも再利用できるように切り出したモジュールが含まれます。構成は次の 2 階層です。
+OscDrax の音声合成機能を他プロジェクトで再利用できるよう切り出したモジュールです。UI からは `SynthUIAdapter` のみを扱えばよく、内部では `AVAudioEngine` を用いた DSP を隠蔽します。
 
-- `Core/` — プラットフォーム非依存の API・データモデル・サービス層
-  - `FormantType.swift`: フォルマント設定を表す列挙体
-  - `MusicTheory.swift`: 波形種別やスケールなど音楽理論関連の列挙体／ヘルパー
-  - `SynthTypes.swift`: トラックパラメータ DTO、インターフェイスなど
-  - `SynthEngineService.swift`: 音声エンジンの公開サービス実装（`SynthEngineProtocol` 準拠）
-  - `SynthUIAdapter.swift`: SwiftUI など UI 層から SynthEngine を操作するためのアダプタ
-- `Platform/` — iOS/macOS 依存のローレベル実装
-  - `AudioEngine.swift`: `AVAudioEngine` を用いた DSP 実装
-  - `FormantFilter.swift`: AVAudioUnitEQ を用いたフォルマントフィルタ
+## 要件
 
-## 他プロジェクトへの組み込み手順
+- 対応 OS: iOS 15+ / macOS 12+
+- 開発言語: Swift 5.8+
+- 依存: AVFoundation（`AVAudioEngine`）
 
-1. `Synth/` フォルダ全体をコピーし、利用先プロジェクトに追加する
-   - Xcode の場合はグループとして追加し、「Copy items if needed」を有効にします。
-2. UI 層で `SynthUIAdapter.shared` を `@StateObject` 等で保持し、以下のメソッドを呼び出して初期化します。
-   ```swift
-   let synth = SynthUIAdapter.shared
-   synth.configureAudioSession()
-   synth.setupTrack(track1)
-   synth.setupTrack(track2)
-   synth.startEngineIfNeeded()
-   ```
-3. `Track` モデル（または同等の ObservableObject）を用意し、`track.synthParameters` を通して音声エンジンへ更新を伝搬します。
-4. アプリライフサイクル（バックグラウンド遷移等）で `SynthUIAdapter` のハンドラを呼び出してください。
-   ```swift
-   synth.handleWillResignActive()
-   synth.handleDidEnterBackground()
-   synth.handleWillEnterForeground()
-   synth.handleDidBecomeActive()
-   ```
-5. ハーモニー更新が必要な場合は `synth.updateHarmonyFrequencies(leadTrack:allTracks:chordType:)` を使用します。
+## 導入（Installation）
 
-## 構造と依存関係
+- 最短手順: `OscDrax/Synth/` フォルダをそのままプロジェクトに追加
+  - Xcode でグループとして追加し「Copy items if needed」を有効化
+  - 併せて `OscDrax/Models/Track.swift` を利用するか、後述の「カスタムモデル」節の通りに独自モデルで置き換え
+- Swift Package 化は未対応（Tips は末尾参照）
 
-```
-UI (SwiftUI / UIKit)
-   │
-   └─ SynthUIAdapter  ──▶  SynthEngineService  ──▶  AudioEngine (AVAudioEngine)
-                           ▲                    └─ FormantFilter (AVAudioUnitEQ)
-                           │
-                           └─ DTO / Enum (WaveformType, FormantType, etc.)
-```
-
-UI 層は `SynthUIAdapter` にのみ依存します。`SynthEngineService` 以下の実装は Platform 層を差し替えることで他プラットフォームにも対応可能です。
-
-## 注意点
-
-- このモジュールは `AVAudioEngine` を利用するため、iOS/macOS でのみ動作します。
-- SwiftPM 化はしていませんが、フォルダ構成を保ったままコピーすれば動作します。
-- ハーモニー計算やトラックの状態同期は `Track` モデル側で `SynthTrackParameters` を生成する実装が必要です。
-
-## 提供される主なクラスと機能
-
-| クラス | 役割 | 主なメソッドやプロパティ |
-| --- | --- | --- |
-| `SynthUIAdapter` | UI 層と音声エンジンの橋渡し | `setupTrack(_:)`, `updateHarmonyFrequencies(...)`, `formantType`, ライフサイクルハンドラ各種 |
-| `SynthEngineService` | `SynthEngineProtocol` 実装。トラック管理とハーモニー計算を担当 | `registerTrack(_:)`, `updateTrack(_:)`, `setTrackIsPlaying(_:isPlaying:)` |
-| `SynthTrackParameters` | トラック状態を渡す DTO | `waveformType`, `frequency`, `volume`, `harmonyEnabled` など |
-| `AudioEngine` (Platform) | `AVAudioEngine` を直接操作するローレベル層 | `createOscillator(with:)`, `updateFrequency`, `updateWaveform` |
-| `FormantFilter` (Platform) | AVAudioUnitEQ を用いたフォルマントフィルタ | `setFormantType(_:)`, `smoothTransition(to:)` |
-
-## SwiftUI での利用サンプル
+## クイックスタート
 
 ```swift
 import SwiftUI
@@ -75,16 +27,8 @@ struct SynthExampleView: View {
 
     var body: some View {
         VStack {
-            Slider(value: Binding(get: {
-                Double(track1.frequency)
-            }, set: { newValue in
-                track1.frequency = Float(newValue)
-            }), in: 110...880)
-            .padding()
-
-            Button(track1.isPlaying ? "Stop" : "Play") {
-                track1.isPlaying.toggle()
-            }
+            Slider(value: Binding(get: { Double(track1.frequency) }, set: { track1.frequency = Float($0) }), in: 110...880)
+            Button(track1.isPlaying ? "Stop" : "Play") { track1.isPlaying.toggle() }
         }
         .onAppear {
             synth.configureAudioSession()
@@ -92,31 +36,16 @@ struct SynthExampleView: View {
             synth.setupTrack(track2)
             synth.startEngineIfNeeded()
         }
-        .onDisappear {
-            synth.deactivateAudioSession()
-        }
+        .onDisappear { synth.deactivateAudioSession() }
     }
 }
 ```
 
-上記では `Track` モデルの `@Published` プロパティを更新すると、自動的に `SynthUIAdapter` 経由で `SynthEngineService` に伝搬されます。
+ポイント:
+- `setupTrack(_:)` を呼ぶと、`Track` の `@Published` 変更を自動でエンジンに反映
+- アプリのライフサイクル通知は `SynthUIAdapter` のハンドラに委譲
 
-### ハーモニー更新の例
-
-```swift
-func updateHarmony() {
-    let tracks = [track1, track2, track3, track4]
-    if let lead = tracks.first(where: { $0.isHarmonyLead }) {
-        synth.updateHarmonyFrequencies(
-            leadTrack: lead,
-            allTracks: tracks,
-            chordType: .major
-        )
-    }
-}
-```
-
-### アプリライフサイクルへの組み込み例 (SwiftUI SceneDelegate 相当)
+## ライフサイクル連携
 
 ```swift
 .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
@@ -133,4 +62,149 @@ func updateHarmony() {
 }
 ```
 
-これらを組み合わせることで、他プロジェクトでも OscDrax のシンセサイザ機能を簡単に再利用できます。
+## 公開 API（概要）
+
+- `SynthUIAdapter`（UI 層の窓口）
+  - セッション: `configureAudioSession()`, `deactivateAudioSession()`, `startEngineIfNeeded()`
+  - トラック接続: `setupTrack(_:)`
+  - ハーモニー: `updateHarmonyFrequencies(leadTrack:allTracks:chordType:)`
+  - 状態: `@Published var formantType: FormantType`, `silentModePolicy: SynthSilentModePolicy`
+- `SynthEngineProtocol`（エンジンの契約）と実装 `SynthEngineService`
+  - トラック: `registerTrack(_:)`, `updateTrack(_:)`, `setTrackIsPlaying(_:isPlaying:)`
+  - ハーモニー: `updateHarmonyFrequencies(...) -> [SynthTrackFrequencyUpdate]`
+  - フォルマント: `var formantType`, `var formantTypePublisher`
+- `SynthTrackParameters`（DTO）
+  - `waveformType`, `waveformData`, `frequency`, `volume`, `isPlaying`, `portamentoTime`, `vibratoEnabled`, `harmonyEnabled`, `scaleType`
+- 音楽理論ユーティリティ
+  - `WaveformType`, `ChordType`, `ScaleType`, `HarmonyInterval`, `FormantType`
+
+関連ファイル:
+- Core: `Core/SynthUIAdapter.swift`, `Core/SynthEngineService.swift`, `Core/SynthTypes.swift`, `Core/MusicTheory.swift`, `Core/FormantType.swift`
+- Platform: `Platform/AudioEngine.swift`, `Platform/FormantFilter.swift`
+
+## 設計と依存関係
+
+```
+UI (SwiftUI / UIKit)
+   │
+   └─ SynthUIAdapter  ──▶  SynthEngineService  ──▶  AudioEngine (AVAudioEngine)
+                           ▲                    └─ FormantFilter (AVAudioUnitEQ)
+                           │
+                           └─ DTO / Enum (WaveformType, FormantType, etc.)
+```
+
+UI 層は `SynthUIAdapter` にのみ依存します。`SynthEngineService` 以下はプラットフォーム層を差し替えることで移植可能です。
+
+## ハーモニー（コード生成）
+
+```swift
+let tracks = [track1, track2, track3, track4]
+if let lead = tracks.first(where: { $0.isHarmonyLead }) {
+    synth.updateHarmonyFrequencies(
+        leadTrack: lead,
+        allTracks: tracks,
+        chordType: .major
+    )
+}
+```
+
+- 使用する音程は `ChordType` により決定（例: `.major`, `.minor`, `.seventh`, `.power`, `.detune`）
+- 結果は `SynthTrackFrequencyUpdate` で返り、サンプル実装では `Track.apply(update:)` で UI 状態へ反映
+
+## フォルマントとサイレントスイッチ
+
+- フォルマント切替: `synth.formantType` を更新（内部で EQ をスムーズに補間）
+- サイレントスイッチ方針: `synth.silentModePolicy = .ignoresMuteSwitch` or `.respectsMuteSwitch`
+
+## スレッド・パフォーマンス
+
+- UI からの変更は Combine で監視し、必要な差分のみ `AudioEngine` へ適用
+- オーディオ処理は `AVAudioSourceNode` のレンダーブロック内で実行
+- 多数トラックを同時発音する場合は CPU 使用率に注意（ミキサのマスター音量はクリッピング抑制のため低めに設定）
+
+## 注意点・既知の制約
+
+- iOS/macOS 専用（`AVAudioEngine` 依存）
+- SwiftPM パッケージ未対応（フォルダコピーで動作）
+- `Track` はサンプル実装。独自モデルを使う場合は `SynthTrackParameters` を構築して `SynthEngineService` に渡す
+
+## 独自モデル（Track なし）での利用例
+
+```swift
+final class MyTrack: ObservableObject, Identifiable {
+    let id: Int
+    @Published var waveformType: WaveformType = .sine
+    @Published var waveformData: [Float] = WaveformType.sine.defaultSamples()
+    @Published var frequency: Float = 440
+    @Published var volume: Float = 0.5
+    @Published var isPlaying: Bool = false
+    @Published var portamentoTime: Float = 0
+    @Published var harmonyEnabled: Bool = false
+    @Published var assignedInterval: HarmonyInterval?
+    @Published var isHarmonyLead: Bool = false
+    @Published var vibratoEnabled: Bool = false
+    @Published var scaleType: ScaleType = .none
+
+    init(id: Int) { self.id = id }
+
+    var synthParameters: SynthTrackParameters {
+        SynthTrackParameters(
+            id: id,
+            waveformType: waveformType,
+            waveformData: waveformData,
+            frequency: frequency,
+            volume: volume,
+            isPlaying: isPlaying,
+            portamentoTime: portamentoTime,
+            harmonyEnabled: harmonyEnabled,
+            assignedInterval: assignedInterval,
+            isHarmonyLead: isHarmonyLead,
+            vibratoEnabled: vibratoEnabled,
+            scaleType: scaleType
+        )
+    }
+}
+
+// 既存 Track を使わない場合は、エンジンに直接登録・更新します
+import Combine
+
+let engine = SynthEngineService.shared
+let t = MyTrack(id: 1)
+var bag = Set<AnyCancellable>()
+
+engine.configureAudioSession()
+engine.startEngineIfNeeded()
+engine.registerTrack(t.synthParameters)
+
+// 変更監視（必要なものだけ購読）
+t.$isPlaying.removeDuplicates().sink { engine.setTrackIsPlaying(t.id, isPlaying: $0) }.store(in: &bag)
+Publishers.MergeMany(
+    t.$frequency.map { _ in () },
+    t.$volume.map { _ in () },
+    t.$waveformData.map { _ in () },
+    t.$portamentoTime.map { _ in () },
+    t.$vibratoEnabled.map { _ in () },
+    t.$harmonyEnabled.map { _ in () },
+    t.$isHarmonyLead.map { _ in () },
+    t.$scaleType.map { _ in () }
+)
+.debounce(for: .milliseconds(10), scheduler: DispatchQueue.main)
+.sink { engine.updateTrack(t.synthParameters) }
+.store(in: &bag)
+```
+
+備考: `SynthUIAdapter` はサンプルの `Track` に結びついた監視を行います。独自モデルを使う場合は、`SynthUIAdapter` と同等の監視（Combine サブスクリプション）をアプリ側で実装するか、`SynthUIAdapter` を拡張してください。
+
+## 参照（主要型）
+
+- 波形: `WaveformType`（`sine/triangle/square/sawtooth/custom`、`defaultSamples()`）
+- スケール: `ScaleType`（`quantizeFrequency(_:)` で周波数を丸め）
+- フォルマント: `FormantType`（`formantFrequencies/Q/gain/outputGain`）
+- DTO: `SynthTrackParameters`、ハーモニー結果: `SynthTrackFrequencyUpdate`
+
+## Swift Package 化のヒント（任意）
+
+- ローカルパッケージとして `Synth/` を独立させ、`Sources/Synth/...` に移動し `Package.swift` を作成
+- product は `.library(name: "Synth", targets: ["Synth"])`
+- target 依存は `AVFoundation` のみ
+

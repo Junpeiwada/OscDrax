@@ -274,48 +274,54 @@ class OscillatorNode {
         self.phaseIncrement = parameters.frequency / Float(sampleRate)
         
         // Create AVAudioSourceNode with proper format
-        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
-        
+        guard let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1) else {
+            fatalError("Failed to create AVAudioFormat for sampleRate=\(sampleRate), channels=1")
+        }
+
         self.sourceNode = AVAudioSourceNode(
             format: format,
-            renderBlock: { [weak self] _, _, frameCount, audioBufferList -> OSStatus in
-                guard let self = self else { return noErr }
-
-                let buffer = audioBufferList.pointee.mBuffers
-                guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else {
-                    return noErr
-                }
-
-                let context = self.currentRenderContext()
-                let waveformTable = self.waveformBuffer.read()
-                let totalFrames = Int(frameCount)
-                let fadeSamples = max(1, Int(self.fadeTime * Float(self.sampleRate)))
-
-                guard context.isPlaying, !waveformTable.isEmpty else {
-                    self.fillSilence(data, frameCount: totalFrames)
-                    return noErr
-                }
-
-                for frame in 0..<totalFrames {
-                    self.updateFade(totalSamples: fadeSamples)
-                    self.updateFrequencyTowardsTarget(context.targetFrequency)
-
-                    let actualFrequency = self.modulatedFrequency(
-                        baseFrequency: self.currentFrequency,
-                        vibratoOn: context.vibratoEnabled
-                    )
-
-                    self.phaseIncrement = actualFrequency / Float(self.sampleRate)
-                    let sample = self.interpolatedSample(from: waveformTable)
-                    data[frame] = self.processedSample(sample, volume: context.volume)
-                    self.advancePhase()
-                }
-
-                return noErr
-            }
+            renderBlock: makeRenderBlock()
         )
     }
     
+    private func makeRenderBlock() -> AVAudioSourceNodeRenderBlock {
+        { [weak self] _, _, frameCount, audioBufferList -> OSStatus in
+            guard let self = self else { return noErr }
+
+            let buffer = audioBufferList.pointee.mBuffers
+            guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else {
+                return noErr
+            }
+
+            let context = self.currentRenderContext()
+            let waveformTable = self.waveformBuffer.read()
+            let totalFrames = Int(frameCount)
+            let fadeSamples = max(1, Int(self.fadeTime * Float(self.sampleRate)))
+
+            guard context.isPlaying, !waveformTable.isEmpty else {
+                self.fillSilence(data, frameCount: totalFrames)
+                return noErr
+            }
+
+            for frame in 0..<totalFrames {
+                self.updateFade(totalSamples: fadeSamples)
+                self.updateFrequencyTowardsTarget(context.targetFrequency)
+
+                let actualFrequency = self.modulatedFrequency(
+                    baseFrequency: self.currentFrequency,
+                    vibratoOn: context.vibratoEnabled
+                )
+
+                self.phaseIncrement = actualFrequency / Float(self.sampleRate)
+                let sample = self.interpolatedSample(from: waveformTable)
+                data[frame] = self.processedSample(sample, volume: context.volume)
+                self.advancePhase()
+            }
+
+            return noErr
+        }
+    }
+
     private func currentRenderContext() -> RenderContext {
         stateLock.lock()
         defer { stateLock.unlock() }
