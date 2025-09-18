@@ -3,38 +3,21 @@ import SwiftUI
 struct ControlPanelView: View {
     @ObservedObject var track: Track
     @Binding var globalChordType: ChordType
-    @Binding var formantType: FormantType
-    @Binding var showHelp: Bool
-    @Binding var currentHelpItem: HelpDescriptions.HelpItem?
     var onChordTypeChanged: () -> Void = {}
-    var onFormantChanged: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 20) {
             FrequencyControlView(
                 frequency: $track.frequency,
-                scaleType: $track.scaleType,
-                showHelp: $showHelp,
-                currentHelpItem: $currentHelpItem
+                scaleType: $track.scaleType
             )
             HarmonyControlView(
                 track: track,
                 globalChordType: $globalChordType,
-                onChordTypeChanged: onChordTypeChanged,
-                showHelp: $showHelp,
-                currentHelpItem: $currentHelpItem
+                onChordTypeChanged: onChordTypeChanged
             )
-            VolumeControlView(
-                volume: $track.volume,
-                showHelp: $showHelp,
-                currentHelpItem: $currentHelpItem
-            )
-            PortamentoControlView(
-                portamentoTime: $track.portamentoTime,
-                showHelp: $showHelp,
-                currentHelpItem: $currentHelpItem
-            )
-            formantSelector
+            VolumeControlView(volume: $track.volume)
+            PortamentoControlView(portamentoTime: $track.portamentoTime)
             PlayButtonView(isPlaying: $track.isPlaying)
         }
     }
@@ -43,8 +26,6 @@ struct ControlPanelView: View {
 struct FrequencyControlView: View {
     @Binding var frequency: Float
     @Binding var scaleType: ScaleType
-    @Binding var showHelp: Bool
-    @Binding var currentHelpItem: HelpDescriptions.HelpItem?
     @State private var showScalePicker = false
     private let minFreq: Float = 20
     private let maxFreq: Float = 20_000
@@ -52,12 +33,10 @@ struct FrequencyControlView: View {
     var body: some View {
         VStack(spacing: 10) {
             HStack(spacing: 12) {
-                HelpButton(
-                    text: "Frequency",
-                    helpItem: .frequency,
-                    currentHelpItem: $currentHelpItem,
-                    showHelp: $showHelp
-                )
+                Text("Frequency")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+                    .frame(width: 80, alignment: .leading)
 
                 CustomFrequencySlider(
                     value: Binding(
@@ -77,18 +56,16 @@ struct FrequencyControlView: View {
                 Text("\(Int(frequency))")
                     .font(.system(size: 12, weight: .regular, design: .monospaced))
                     .foregroundColor(.white.opacity(0.6))
-                    .frame(width: 60, alignment: .trailing)
+                    .frame(width: 50, alignment: .trailing)
             }
             .frame(height: 30)
             .padding(.bottom, 10)
 
             HStack(spacing: 12) {
-                HelpButton(
-                    text: "Scale",
-                    helpItem: .scale,
-                    currentHelpItem: $currentHelpItem,
-                    showHelp: $showHelp
-                )
+                Text("Scale")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+                    .frame(width: 80, alignment: .leading)
 
                 Button(action: {
                     showScalePicker = true
@@ -127,17 +104,13 @@ struct FrequencyControlView: View {
 
 struct VolumeControlView: View {
     @Binding var volume: Float
-    @Binding var showHelp: Bool
-    @Binding var currentHelpItem: HelpDescriptions.HelpItem?
 
     var body: some View {
         HStack(spacing: 12) {
-            HelpButton(
-                text: "Volume",
-                helpItem: .volume,
-                currentHelpItem: $currentHelpItem,
-                showHelp: $showHelp
-            )
+            Text("Volume")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+                .frame(width: 80, alignment: .leading)
 
             CustomSlider(
                 value: $volume,
@@ -148,7 +121,7 @@ struct VolumeControlView: View {
             Text("\(Int(volume * 100))%")
                 .font(.system(size: 12, weight: .regular, design: .monospaced))
                 .foregroundColor(.white.opacity(0.6))
-                .frame(width: 60, alignment: .trailing)
+                .frame(width: 50, alignment: .trailing)
         }
         .frame(height: 30)
     }
@@ -156,17 +129,13 @@ struct VolumeControlView: View {
 
 struct PortamentoControlView: View {
     @Binding var portamentoTime: Float
-    @Binding var showHelp: Bool
-    @Binding var currentHelpItem: HelpDescriptions.HelpItem?
 
     var body: some View {
         HStack(spacing: 12) {
-            HelpButton(
-                text: "Portamento",
-                helpItem: .portamento,
-                currentHelpItem: $currentHelpItem,
-                showHelp: $showHelp
-            )
+            Text("Portamento")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+                .frame(width: 80, alignment: .leading)
 
             CustomSlider(
                 value: $portamentoTime,
@@ -177,7 +146,7 @@ struct PortamentoControlView: View {
             Text("\(Int(portamentoTime))ms")
                 .font(.system(size: 12, weight: .regular, design: .monospaced))
                 .foregroundColor(.white.opacity(0.6))
-                .frame(width: 60, alignment: .trailing)
+                .frame(width: 50, alignment: .trailing)
         }
         .frame(height: 30)
     }
@@ -187,19 +156,15 @@ struct HarmonyControlView: View {
     @ObservedObject var track: Track
     @Binding var globalChordType: ChordType
     var onChordTypeChanged: () -> Void = {}
-    @Binding var showHelp: Bool
-    @Binding var currentHelpItem: HelpDescriptions.HelpItem?
 
     var body: some View {
         VStack(spacing: 12) {
             // First row: Harmony Toggle + Position label + Vibrato Toggle
             HStack(spacing: 12) {
-                HelpButton(
-                    text: "Harmony",
-                    helpItem: .harmony,
-                    currentHelpItem: $currentHelpItem,
-                    showHelp: $showHelp
-                )
+                Text("Harmony")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+                    .frame(width: 80, alignment: .leading)
 
                 Toggle("", isOn: $track.harmonyEnabled)
                     .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.9, green: 0.5, blue: 0.1)))
@@ -208,14 +173,18 @@ struct HarmonyControlView: View {
 
                 Spacer()
 
+                Text(track.harmonyEnabled ? (track.assignedInterval?.displayName ?? "--") : "--")
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .foregroundColor(track.harmonyEnabled ? Color(red: 0.9, green: 0.5, blue: 0.1) : .gray)
+                    .frame(width: 50)
+
+                Spacer()
+
                 // Vibrato Toggle
-                HelpButton(
-                    text: "Vibrato",
-                    helpItem: .vibrato,
-                    currentHelpItem: $currentHelpItem,
-                    showHelp: $showHelp
-                )
-                .frame(minWidth: 55)
+                Text("Vibrato")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(minWidth: 55)
 
                 Toggle("", isOn: $track.vibratoEnabled)
                     .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.9, green: 0.5, blue: 0.1)))
@@ -225,13 +194,10 @@ struct HarmonyControlView: View {
 
             // Second row: Chord Type Selector (compact)
             HStack(spacing: 8) {
-                HelpButton(
-                    text: "Chord",
-                    helpItem: .chord,
-                    currentHelpItem: $currentHelpItem,
-                    showHelp: $showHelp
-                )
-                .opacity(track.harmonyEnabled ? 1.0 : 0.4)
+                Text("Chord")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(track.harmonyEnabled ? 0.8 : 0.3))
+                    .frame(width: 60, alignment: .leading)
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 4) {
@@ -262,52 +228,8 @@ struct HarmonyControlView: View {
                 }
                 .opacity(track.harmonyEnabled ? 1.0 : 0.4)
             }
+
         }
-    }
-}
-
-private extension ControlPanelView {
-    var formantSelector: some View {
-        HStack(spacing: 8) {
-            HelpButton(
-                text: "Formant",
-                helpItem: .formant,
-                currentHelpItem: $currentHelpItem,
-                showHelp: $showHelp
-            )
-
-            HStack(spacing: 4) {
-                ForEach(FormantType.allCases, id: \.self) { formant in
-                    Button(action: {
-                        formantType = formant
-                        onFormantChanged()
-                    }, label: {
-                        Text(formant.rawValue)
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(formantForegroundColor(for: formant))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(formantBackgroundColor(for: formant))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                            )
-                    })
-                }
-            }
-        }
-    }
-
-    func formantForegroundColor(for formant: FormantType) -> Color {
-        return formantType == formant ? .black : .white
-    }
-
-    func formantBackgroundColor(for formant: FormantType) -> Color {
-        let activeColor = Color(red: 0.9, green: 0.5, blue: 0.1)
-        return formantType == formant ? activeColor : Color.white.opacity(0.1)
     }
 }
 
@@ -328,6 +250,7 @@ private extension HarmonyControlView {
         }
         return globalChordType == chord ? activeColor : Color.white.opacity(0.1)
     }
+
 }
 
 struct PlayButtonView: View {

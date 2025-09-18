@@ -15,11 +15,9 @@ struct ContentView: View {
     @StateObject private var track2 = Track(id: 2)
     @StateObject private var track3 = Track(id: 3)
     @StateObject private var track4 = Track(id: 4)
-    @StateObject private var synthController = SynthUIAdapter.shared
+    @StateObject private var audioManager = AudioManager.shared
     @State private var isUpdatingHarmony = false
     @State private var globalChordType: ChordType = .major
-    @State private var showHelp = false
-    @State private var currentHelpItem: HelpDescriptions.HelpItem?
 
     var currentTrack: Track {
         switch selectedTrack {
@@ -41,27 +39,13 @@ struct ContentView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                WaveformControlView(
-                    track: currentTrack,
-                    showHelp: $showHelp,
-                    currentHelpItem: $currentHelpItem
-                )
+                WaveformControlView(track: currentTrack)
                     .padding(.bottom, -10)
 
                 WaveformDisplayView(track: currentTrack)
                     .frame(height: 200)
 
-                ControlPanelView(
-                    track: currentTrack,
-                    globalChordType: $globalChordType,
-                    formantType: $synthController.formantType,
-                    showHelp: $showHelp,
-                    currentHelpItem: $currentHelpItem,
-                    onChordTypeChanged: updateHarmonyForChordChange,
-                    onFormantChanged: {
-                        // フォルマント変更はSynthUIAdapter経由で伝播済み
-                    }
-                )
+                ControlPanelView(track: currentTrack, globalChordType: $globalChordType, onChordTypeChanged: updateHarmonyForChordChange)
 
                 Spacer()
 
@@ -70,29 +54,20 @@ struct ContentView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
-
-            // Help overlay - covers entire screen
-            if showHelp, let helpItem = currentHelpItem {
-                HelpOverlayView(
-                    helpItem: helpItem,
-                    isPresented: $showHelp
-                )
-                .ignoresSafeArea()
-            }
         }
         .onAppear {
             // Load saved state if exists
             loadSavedTracks()
 
-            synthController.configureAudioSession()
+            audioManager.configureAudioSession()
 
             // Setup audio for all tracks
-            synthController.setupTrack(track1)
-            synthController.setupTrack(track2)
-            synthController.setupTrack(track3)
-            synthController.setupTrack(track4)
+            audioManager.setupTrack(track1)
+            audioManager.setupTrack(track2)
+            audioManager.setupTrack(track3)
+            audioManager.setupTrack(track4)
 
-            synthController.startEngineIfNeeded()
+            audioManager.startEngineIfNeeded()
 
             // Setup frequency change observers for harmony
             setupHarmonyObservers()
@@ -100,16 +75,16 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             // Save tracks when app goes to background
             saveTracks()
-            synthController.handleWillResignActive()
+            audioManager.handleWillResignActive()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
-            synthController.handleDidEnterBackground()
+            audioManager.handleDidEnterBackground()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-            synthController.handleWillEnterForeground()
+            audioManager.handleWillEnterForeground()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            synthController.handleDidBecomeActive()
+            audioManager.handleDidBecomeActive()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
             // Save tracks when app terminates
@@ -151,13 +126,13 @@ struct ContentView: View {
 
         guard !isUpdatingHarmony else { return }
 
-        // Find current harmony lead track
-        if let leadTrack = allTracks.first(where: { $0.isHarmonyLead }) {
+        // Find current master track
+        if let masterTrack = allTracks.first(where: { $0.isHarmonyMaster }) {
             isUpdatingHarmony = true
 
             // Re-calculate all harmonies with new chord type
-            synthController.updateHarmonyFrequencies(
-                leadTrack: leadTrack,
+            audioManager.updateHarmonyFrequencies(
+                masterTrack: masterTrack,
                 allTracks: allTracks,
                 chordType: globalChordType
             )
@@ -176,23 +151,23 @@ struct ContentView: View {
                 .sink { _ in
                     guard !self.isUpdatingHarmony else { return }
 
-                    // Set this track as the harmony lead and update others
+                    // Set this track as the master and update others
                     self.isUpdatingHarmony = true
 
-                    // Reset all lead flags and set this track as the lead
-                    allTracks.forEach { $0.isHarmonyLead = false }
-                    track.isHarmonyLead = true
+                    // Reset all master flags and set this track as master
+                    allTracks.forEach { $0.isHarmonyMaster = false }
+                    track.isHarmonyMaster = true
 
                     // Update harmony frequencies for other tracks
-                    self.synthController.updateHarmonyFrequencies(
-                        leadTrack: track,
+                    self.audioManager.updateHarmonyFrequencies(
+                        masterTrack: track,
                         allTracks: allTracks,
                         chordType: self.globalChordType
                     )
 
                     self.isUpdatingHarmony = false
                 }
-                .store(in: &synthController.cancellables)
+                .store(in: &audioManager.cancellables)
 
             // Also observe harmony enabled state changes
             track.$harmonyEnabled
@@ -200,13 +175,13 @@ struct ContentView: View {
                 .sink { _ in
                     guard !self.isUpdatingHarmony else { return }
 
-                    // Find current harmony lead track
-                    if let leadTrack = allTracks.first(where: { $0.isHarmonyLead }) {
+                    // Find current master track
+                    if let masterTrack = allTracks.first(where: { $0.isHarmonyMaster }) {
                         self.isUpdatingHarmony = true
 
-                        // Re-assign intervals based on current harmony lead
-                        self.synthController.updateHarmonyFrequencies(
-                            leadTrack: leadTrack,
+                        // Re-assign intervals based on current master
+                        self.audioManager.updateHarmonyFrequencies(
+                            masterTrack: masterTrack,
                             allTracks: allTracks,
                             chordType: self.globalChordType
                         )
@@ -214,7 +189,7 @@ struct ContentView: View {
                         self.isUpdatingHarmony = false
                     }
                 }
-                .store(in: &synthController.cancellables)
+                .store(in: &audioManager.cancellables)
         }
     }
 }

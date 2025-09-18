@@ -2,24 +2,22 @@ import SwiftUI
 
 struct WaveformControlView: View {
     @ObservedObject var track: Track
-    @Binding var showHelp: Bool
-    @Binding var currentHelpItem: HelpDescriptions.HelpItem?
     @State private var showPresetPicker = false
 
     var body: some View {
         HStack(spacing: 8) {
-                Button(action: {
-                    showPresetPicker = true
-                }, label: {
-                    HStack {
-                        Image(systemName: "waveform")
-                            .font(.system(size: 16))
-                        Text(track.waveformType.displayName)
-                            .font(.system(size: 14, weight: .medium))
-                    }
-                    .foregroundColor(.white)
-                })
-                .buttonStyle(LiquidglassButtonStyle())
+            Button(action: {
+                showPresetPicker = true
+            }, label: {
+                HStack {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 16))
+                    Text(track.waveformType.displayName)
+                        .font(.system(size: 14, weight: .medium))
+                }
+                .foregroundColor(.white)
+            })
+            .buttonStyle(LiquidglassButtonStyle())
             .popover(isPresented: $showPresetPicker) {
                 PresetPickerView(track: track, isPresented: $showPresetPicker)
                     .frame(width: 280, height: 300)
@@ -36,9 +34,9 @@ struct WaveformControlView: View {
                     .presentationCompactAdaptation(.popover)
             }
 
-                Spacer()
+            Spacer()
 
-                Button(action: {
+            Button(action: {
                 track.setWaveformType(.custom)
                 track.clearCustomWaveform()
             }, label: {
@@ -68,7 +66,7 @@ struct PresetPickerView: View {
                 .padding(.top, 20)
 
             VStack(spacing: 12) {
-                ForEach([WaveformType.sine, .triangle, .square, .sawtooth], id: \.self) { type in
+                ForEach([WaveformType.sine, .triangle, .square], id: \.self) { type in
                     WaveformButton(
                         type: type,
                         isSelected: track.waveformType == type,
@@ -184,7 +182,6 @@ struct WaveformButton: View {
         case .sine: return "waveform.path"
         case .triangle: return "triangle"
         case .square: return "square"
-        case .sawtooth: return "waveform"
         case .custom: return "scribble"
         }
     }
