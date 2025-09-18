@@ -19,6 +19,14 @@ final class SynthUIAdapter: ObservableObject {
         }
     }
 
+    /// マスターボリューム（0.0〜1.0）。
+    @Published var masterVolume: Float {
+        didSet {
+            guard oldValue != masterVolume else { return }
+            engine.masterVolume = masterVolume
+        }
+    }
+
     /// サイレントスイッチの扱い。
     var silentModePolicy: SynthSilentModePolicy = .ignoresMuteSwitch {
         didSet {
@@ -32,6 +40,7 @@ final class SynthUIAdapter: ObservableObject {
     private init(engine: SynthEngineProtocol = SynthEngineService.shared) {
         self.engine = engine
         self.formantType = engine.formantType
+        self.masterVolume = engine.masterVolume
         self.silentModePolicy = engine.silentModePolicy
         engine.silentModePolicy = silentModePolicy
 
@@ -40,6 +49,14 @@ final class SynthUIAdapter: ObservableObject {
             .sink { [weak self] value in
                 guard let self = self, self.formantType != value else { return }
                 self.formantType = value
+            }
+            .store(in: &cancellables)
+
+        engine.masterVolumePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
+                guard let self = self, self.masterVolume != value else { return }
+                self.masterVolume = value
             }
             .store(in: &cancellables)
     }

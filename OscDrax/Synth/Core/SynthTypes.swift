@@ -5,6 +5,8 @@ import Combine
 public enum SynthConstants {
     /// デフォルトの波形サンプル数。
     public static let defaultWaveformSampleCount = 512
+    /// デフォルトのマスターボリューム（0.0〜1.0）。
+    public static let defaultMasterVolume: Float = 1.0
 }
 
 /// オーディオエンジンへ渡すトラックパラメータのスナップショット。
@@ -86,8 +88,12 @@ public struct SynthTrackFrequencyUpdate {
 public protocol SynthEngineProtocol: AnyObject {
     /// 現在のフォルマント種別。
     var formantType: FormantType { get set }
+    /// マスターボリューム（0.0〜1.0）。
+    var masterVolume: Float { get set }
     /// フォルマント変更を監視するためのパブリッシャ。
     var formantTypePublisher: AnyPublisher<FormantType, Never> { get }
+    /// マスターボリューム変更を監視するためのパブリッシャ。
+    var masterVolumePublisher: AnyPublisher<Float, Never> { get }
     /// サイレントモードの扱い。
     var silentModePolicy: SynthSilentModePolicy { get set }
 

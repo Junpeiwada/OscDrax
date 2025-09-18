@@ -12,12 +12,18 @@ final class SynthEngineService: ObservableObject, SynthEngineProtocol {
     private var trackStates: [Int: SynthTrackParameters] = [:]
     private var suspendedTrackIDs: Set<Int> = []
     private let formantSubject = CurrentValueSubject<FormantType, Never>(.none)
+    private let masterVolumeSubject = CurrentValueSubject<Float, Never>(SynthConstants.defaultMasterVolume)
 
     @Published private var formantStorage: FormantType = .none
 
     /// フォルマント変更を購読するためのパブリッシャ。
     var formantTypePublisher: AnyPublisher<FormantType, Never> {
         formantSubject.eraseToAnyPublisher()
+    }
+
+    /// マスターボリューム変更を購読するためのパブリッシャ。
+    var masterVolumePublisher: AnyPublisher<Float, Never> {
+        masterVolumeSubject.eraseToAnyPublisher()
     }
 
     /// 現在のフォルマント種別。
@@ -31,6 +37,17 @@ final class SynthEngineService: ObservableObject, SynthEngineProtocol {
         }
     }
 
+    /// マスターボリューム（0.0〜1.0）。
+    var masterVolume: Float {
+        get { masterVolumeSubject.value }
+        set {
+            let clamped = max(0.0, min(1.0, newValue))
+            guard masterVolumeSubject.value != clamped else { return }
+            masterVolumeSubject.send(clamped)
+            audioEngine.updateMasterVolume(clamped)
+        }
+    }
+
     /// サイレントスイッチへの追従ポリシー。
     var silentModePolicy: SynthSilentModePolicy = .ignoresMuteSwitch {
         didSet {
@@ -41,6 +58,7 @@ final class SynthEngineService: ObservableObject, SynthEngineProtocol {
     private init() {
         configureAudioSession()
         audioEngine.startEngineIfNeeded()
+        audioEngine.updateMasterVolume(masterVolumeSubject.value)
 
         NotificationCenter.default.addObserver(
             self,

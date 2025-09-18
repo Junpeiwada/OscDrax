@@ -123,6 +123,7 @@ final class OscillatorNode
 ### ミキシングとダイナミクス
 - 各トラックで `tanh(sample * 0.7)` によるソフトクリッピングを実施
 - `AVAudioMixerNode` が全トラックを加算ミックスし、出力を FormantFilter へ送る
+- マスターボリューム係数: 0.0〜1.0（既定 1.0、将来の別アプリで UI 露出予定）
 
 ### データ保存フォーマット
 - JSON（Codable）でトラック配列を保存
@@ -179,4 +180,3 @@ final class OscillatorNode
 7. ✅ フォルマントフィルタ（母音シミュレーション）
 8. ✅ JSON 永続化（再生状態は復元時に OFF）
 9. ✅ LaunchScreen（SplashImage）
-

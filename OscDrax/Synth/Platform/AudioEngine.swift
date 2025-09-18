@@ -10,6 +10,7 @@ class AudioEngine: ObservableObject {
     private let sampleRateValue: Double = 44_100.0
     private let preferredBufferFrameCount: Double = 512.0
     private let mixerVolume: Float = 0.3  // Master volume to prevent clipping with 4 tracks
+    private var masterVolume: Float = SynthConstants.defaultMasterVolume
     private let formantFilter = FormantFilter()
 
     init() {
@@ -24,8 +25,7 @@ class AudioEngine: ObservableObject {
         engine.connect(mixer, to: formantFilter.node, format: nil)
         engine.connect(formantFilter.node, to: engine.mainMixerNode, format: nil)
 
-        // Set mixer volume to prevent clipping when multiple tracks play
-        mixer.outputVolume = mixerVolume
+        applyMixerVolume()
 
         // Initially set formant to none
         formantFilter.setFormantType(.none)
@@ -118,6 +118,16 @@ class AudioEngine: ObservableObject {
     /// フォルマントを滑らかに遷移させます。
     func smoothFormantTransition(to type: FormantType) {
         formantFilter.smoothTransition(to: type)
+    }
+
+    /// マスターボリュームを更新します（0.0〜1.0）。
+    func updateMasterVolume(_ volume: Float) {
+        masterVolume = max(0.0, min(1.0, volume))
+        applyMixerVolume()
+    }
+
+    private func applyMixerVolume() {
+        mixer.outputVolume = mixerVolume * masterVolume
     }
 
     deinit {

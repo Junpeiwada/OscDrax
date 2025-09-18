@@ -68,11 +68,12 @@ struct SynthExampleView: View {
   - セッション: `configureAudioSession()`, `deactivateAudioSession()`, `startEngineIfNeeded()`
   - トラック接続: `setupTrack(_:)`
   - ハーモニー: `updateHarmonyFrequencies(leadTrack:allTracks:chordType:)`
-  - 状態: `@Published var formantType: FormantType`, `silentModePolicy: SynthSilentModePolicy`
+  - 状態: `@Published var formantType: FormantType`, `@Published var masterVolume: Float`, `silentModePolicy: SynthSilentModePolicy`
 - `SynthEngineProtocol`（エンジンの契約）と実装 `SynthEngineService`
   - トラック: `registerTrack(_:)`, `updateTrack(_:)`, `setTrackIsPlaying(_:isPlaying:)`
   - ハーモニー: `updateHarmonyFrequencies(...) -> [SynthTrackFrequencyUpdate]`
   - フォルマント: `var formantType`, `var formantTypePublisher`
+  - マスターボリューム: `var masterVolume`, `var masterVolumePublisher`（0.0〜1.0、既定 1.0）
 - `SynthTrackParameters`（DTO）
   - `waveformType`, `waveformData`, `frequency`, `volume`, `isPlaying`, `portamentoTime`, `vibratoEnabled`, `harmonyEnabled`, `scaleType`
 - 音楽理論ユーティリティ
@@ -207,4 +208,3 @@ Publishers.MergeMany(
 - ローカルパッケージとして `Synth/` を独立させ、`Sources/Synth/...` に移動し `Package.swift` を作成
 - product は `.library(name: "Synth", targets: ["Synth"])`
 - target 依存は `AVFoundation` のみ
-
