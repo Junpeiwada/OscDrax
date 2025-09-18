@@ -177,16 +177,20 @@ class AudioManager: ObservableObject {
             return [(.root, 1.0), (.minorThird, 1.2), (.fifth, 1.5), (.octave, 2.0)]
         case .seventh:
             return [(.root, 1.0), (.majorThird, 1.25), (.fifth, 1.5), (.flatSeventh, 1.78)]
-        case .minorSeventh:
-            return [(.root, 1.0), (.minorThird, 1.2), (.fifth, 1.5), (.flatSeventh, 1.78)]
-        case .majorSeventh:
-            return [(.root, 1.0), (.majorThird, 1.25), (.fifth, 1.5), (.seventh, 1.875)]
-        case .sus4:
-            return [(.root, 1.0), (.fourth, 1.333), (.fifth, 1.5), (.octave, 2.0)]
-        case .diminished:
-            return [(.root, 1.0), (.minorThird, 1.2), (.flatFifth, 1.414), (.doubleFlatSeventh, 1.68)]
         case .power:
             return [(.root, 1.0), (.fifth, 1.5), (.octave, 2.0), (.doubleOctave, 4.0)]
+        case .unison:
+            // All tracks play the same frequency
+            return [(.root, 1.0), (.root, 1.0), (.root, 1.0), (.root, 1.0)]
+        case .detune:
+            // Slightly detuned frequencies for a thick, chorus-like sound
+            // Using cents: ±5 to ±10 cents (1 cent = 2^(1/1200))
+            return [
+                (.root, 1.0),                    // Original pitch
+                (.detuneMinus5, 0.997),         // -5 cents
+                (.detunePlus5, 1.003),          // +5 cents
+                (.detunePlus10, 1.006)          // +10 cents
+            ]
         }
     }
 

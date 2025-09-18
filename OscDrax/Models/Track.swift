@@ -54,11 +54,9 @@ enum ChordType: String, CaseIterable, Codable {
     case major = "Major"
     case minor = "Minor"
     case seventh = "7th"
-    case minorSeventh = "m7"
-    case majorSeventh = "Maj7"
-    case sus4 = "Sus4"
-    case diminished = "Dim"
     case power = "Power"
+    case unison = "Unison"
+    case detune = "Detune"
 }
 
 struct HarmonyInterval: RawRepresentable, Codable, Equatable {
@@ -91,6 +89,10 @@ struct HarmonyInterval: RawRepresentable, Codable, Equatable {
     static let seventh = HarmonyInterval(rawValue: "7th")
     static let octave = HarmonyInterval(rawValue: "Oct")
     static let doubleOctave = HarmonyInterval(rawValue: "2Oct")
+    // Detune intervals with cent notation
+    static let detuneMinus5 = HarmonyInterval(rawValue: "-5¢")
+    static let detunePlus5 = HarmonyInterval(rawValue: "+5¢")
+    static let detunePlus10 = HarmonyInterval(rawValue: "+10¢")
 }
 
 enum ScaleType: String, CaseIterable, Codable {
